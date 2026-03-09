@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
-import { authenticateUser } from '@/lib/mock-data'
 import { Role } from '@/types'
 
 const GOLD = '#C9A227'
@@ -29,15 +28,13 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    await new Promise(r => setTimeout(r, 500))
-    const user = authenticateUser(email, password)
-    if (!user) {
-      setError('Invalid email or password.')
+    try {
+      const user = await login(email, password)
+      router.push(user.role === Role.ADVISER ? '/adviser' : `/client/${user.id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password.')
       setLoading(false)
-      return
     }
-    login(user)
-    router.push(user.role === Role.ADVISER ? '/adviser' : `/client/${user.id}`)
   }
 
   return (
@@ -80,7 +77,7 @@ export default function LoginPage() {
                 onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none transition-all placeholder-white/20 focus:border-white/20"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none transition-all placeholder-white/20"
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
               />
             </div>
@@ -97,9 +94,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && (
-              <p className="text-xs text-red-400 px-1">{error}</p>
-            )}
+            {error && <p className="text-xs text-red-400 px-1">{error}</p>}
 
             <button
               type="submit"
@@ -111,25 +106,20 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
             <span className="text-xs text-white/25">or try a demo account</span>
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
           </div>
 
-          {/* Demo accounts */}
           <div className="space-y-1.5">
             {DEMO_ACCOUNTS.map(d => (
               <button
                 key={d.email}
                 type="button"
                 onClick={() => { setEmail(d.email); setPassword('demo123') }}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-left transition-all group"
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                }}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-left transition-all"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(201,162,39,0.2)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)')}
               >
