@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import Badge from '@/components/ui/Badge'
 import type { Client } from '@/types'
 import { formatCurrency, getScoreColor } from '@/lib/utils'
 import { calculateWellnessScore } from '@/lib/wellness'
@@ -12,17 +11,35 @@ interface ClientTableProps {
   clients: Client[]
 }
 
-function getWellnessBadgeVariant(score: number): 'emerald' | 'gold' | 'orange' | 'red' {
-  if (score >= 70) return 'emerald'
-  if (score >= 50) return 'gold'
-  if (score >= 30) return 'orange'
-  return 'red'
+const RISK_LABEL: Record<RiskProfile, string> = {
+  [RiskProfile.CONSERVATIVE]: 'Conservative',
+  [RiskProfile.MODERATE]: 'Moderate',
+  [RiskProfile.AGGRESSIVE]: 'Aggressive',
 }
 
-function getRiskBadgeVariant(risk: RiskProfile): 'emerald' | 'gold' | 'red' {
-  if (risk === RiskProfile.CONSERVATIVE) return 'emerald'
-  if (risk === RiskProfile.MODERATE) return 'gold'
-  return 'red'
+const RISK_COLOR: Record<RiskProfile, string> = {
+  [RiskProfile.CONSERVATIVE]: '#10B981',
+  [RiskProfile.MODERATE]: '#C9A227',
+  [RiskProfile.AGGRESSIVE]: '#EF4444',
+}
+
+function ScoreBar({ score }: { score: number }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', maxWidth: 60 }}>
+        <motion.div
+          className="h-full rounded-full"
+          style={{ background: getScoreColor(score) }}
+          initial={{ width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        />
+      </div>
+      <span className="text-sm font-semibold tabular-nums" style={{ color: getScoreColor(score) }}>
+        {score}
+      </span>
+    </div>
+  )
 }
 
 export default function ClientTable({ clients }: ClientTableProps) {
@@ -32,12 +49,12 @@ export default function ClientTable({ clients }: ClientTableProps) {
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            {['Client', 'Portfolio Value', 'Risk Profile', 'Wellness Score', 'Status'].map(h => (
+          <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            {['Client', 'AUM', 'Risk Profile', 'Wellness', 'Status'].map(h => (
               <th
                 key={h}
-                className="text-left text-xs font-semibold uppercase tracking-widest py-3 px-4"
-                style={{ color: 'rgba(255,255,255,0.3)' }}
+                className="text-left text-xs font-medium py-3 px-5"
+                style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '0.05em', textTransform: 'uppercase' }}
               >
                 {h}
               </th>
@@ -47,57 +64,75 @@ export default function ClientTable({ clients }: ClientTableProps) {
         <tbody>
           {clients.map((client, i) => {
             const wellness = calculateWellnessScore(client.portfolio, client.riskProfile)
+            const riskColor = RISK_COLOR[client.riskProfile]
             return (
               <motion.tr
                 key={client.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.07 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.06 }}
                 onClick={() => router.push(`/client/${client.id}`)}
-                className="cursor-pointer transition-colors"
+                className="cursor-pointer group"
                 style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
-                <td className="py-4 px-4">
+                {/* Client */}
+                <td className="py-3.5 px-5">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-                      style={{ background: 'rgba(245,200,66,0.15)', color: '#C9A227' }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: 'rgba(201,162,39,0.12)', color: '#C9A227' }}
                     >
                       {client.name.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white">{client.name}</p>
-                      <p className="text-xs text-white/40">{client.email}</p>
+                      <p className="text-sm font-medium text-white/90 group-hover:text-white transition-colors">
+                        {client.name}
+                      </p>
+                      <p className="text-xs text-white/30">{client.email}</p>
                     </div>
                   </div>
                 </td>
-                <td className="py-4 px-4">
-                  <span className="text-sm font-medium text-white">
+
+                {/* AUM */}
+                <td className="py-3.5 px-5">
+                  <span className="text-sm font-medium text-white/80">
                     {formatCurrency(client.portfolio.totalValue)}
                   </span>
                 </td>
-                <td className="py-4 px-4">
-                  <Badge variant={getRiskBadgeVariant(client.riskProfile)}>
-                    {client.riskProfile}
-                  </Badge>
+
+                {/* Risk */}
+                <td className="py-3.5 px-5">
+                  <span
+                    className="text-xs font-medium px-2.5 py-1 rounded-full"
+                    style={{
+                      background: `${riskColor}12`,
+                      color: riskColor,
+                      border: `1px solid ${riskColor}25`,
+                    }}
+                  >
+                    {RISK_LABEL[client.riskProfile]}
+                  </span>
                 </td>
-                <td className="py-4 px-4">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: getScoreColor(wellness.overall) }}
-                    >
-                      {wellness.overall}
-                    </span>
-                    <span className="text-xs text-white/40">/ 100</span>
-                  </div>
+
+                {/* Score */}
+                <td className="py-3.5 px-5">
+                  <ScoreBar score={wellness.overall} />
                 </td>
-                <td className="py-4 px-4">
-                  <Badge variant={getWellnessBadgeVariant(wellness.overall)}>
+
+                {/* Status */}
+                <td className="py-3.5 px-5">
+                  <span
+                    className="text-xs font-medium px-2.5 py-1 rounded-full"
+                    style={{
+                      background: `${getScoreColor(wellness.overall)}12`,
+                      color: getScoreColor(wellness.overall),
+                      border: `1px solid ${getScoreColor(wellness.overall)}25`,
+                    }}
+                  >
                     {wellness.label}
-                  </Badge>
+                  </span>
                 </td>
               </motion.tr>
             )

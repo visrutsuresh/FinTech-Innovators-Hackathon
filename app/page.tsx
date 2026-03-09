@@ -4,180 +4,221 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 
-const features = [
-  { icon: '🏦', title: 'Unified Portfolio', desc: 'Stocks, crypto, cash & private assets in one view' },
-  { icon: '🧮', title: 'Wellness Scoring', desc: 'HHI-based diversification, liquidity & behavioral alignment' },
-  { icon: '🤖', title: 'AI Insights', desc: 'Claude-powered recommendations tailored to your profile' },
-  { icon: '👨‍💼', title: 'Adviser Portal', desc: 'Manage all clients from a single powerful dashboard' },
+const GOLD = '#C9A227'
+const GOLD_DIM = 'rgba(201,162,39,0.12)'
+const GOLD_BORDER = 'rgba(201,162,39,0.2)'
+
+const pillars = [
+  {
+    label: 'Unified View',
+    title: 'Every asset in one place',
+    body: 'Stocks, crypto, cash, bonds and private equity — tracked together with live prices.',
+    accent: '#C9A227',
+  },
+  {
+    label: 'Wellness Score',
+    title: 'Know your financial health',
+    body: 'A composite score built from diversification, liquidity, and behavioural alignment.',
+    accent: '#10B981',
+  },
+  {
+    label: 'AI Insights',
+    title: 'Personalised recommendations',
+    body: 'Claude analyses your exact portfolio and surfaces actionable next steps.',
+    accent: '#6366F1',
+  },
 ]
 
-const stats = [
-  { label: 'Assets Tracked', value: '$1.02M+', desc: 'across 5 clients' },
-  { label: 'Avg Wellness Score', value: '67/100', desc: 'across portfolio' },
-  { label: 'AI Insights', value: 'Real-time', desc: 'powered by Claude' },
+const metrics = [
+  { value: '$1.02M+', label: 'Assets under tracking' },
+  { value: '5', label: 'Client profiles' },
+  { value: 'Real-time', label: 'AI-powered insights' },
 ]
+
+function Divider() {
+  return <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0' }} />
+}
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
   return (
-    <div className="min-h-screen" style={{ background: '#080808' }}>
-      {/* Background orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute rounded-full blur-3xl opacity-20"
-          style={{
-            width: '600px',
-            height: '600px',
-            background: 'radial-gradient(circle, #C9A227 0%, transparent 70%)',
-            top: '-200px',
-            left: '-200px',
-          }}
-        />
-        <div
-          className="absolute rounded-full blur-3xl opacity-15"
-          style={{
-            width: '500px',
-            height: '500px',
-            background: 'radial-gradient(circle, #10B981 0%, transparent 70%)',
-            bottom: '-100px',
-            right: '-100px',
-          }}
-        />
-        <div
-          className="absolute rounded-full blur-3xl opacity-10"
-          style={{
-            width: '400px',
-            height: '400px',
-            background: 'radial-gradient(circle, #3B82F6 0%, transparent 70%)',
-            top: '40%',
-            left: '60%',
-          }}
-        />
-      </div>
+    <div className="min-h-screen" style={{ background: '#080808', color: '#fff' }}>
+      {/* Ambient glow — very subtle */}
+      <div
+        className="fixed pointer-events-none"
+        style={{
+          top: -300,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 800,
+          height: 600,
+          background: 'radial-gradient(ellipse, rgba(201,162,39,0.07) 0%, transparent 70%)',
+          zIndex: 0,
+        }}
+      />
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 text-center">
+      {/* ── HERO ────────────────────────────────── */}
+      <section
+        className="relative pt-36 pb-28 px-6 text-center"
+        style={{ zIndex: 1 }}
+      >
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={mounted ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+          className="max-w-3xl mx-auto"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 text-xs font-medium"
-            style={{ background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.2)', color: '#C9A227' }}>
-            🏆 NTU FinTech Innovators Hackathon 2026
+          {/* Pill badge */}
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-8"
+            style={{ background: GOLD_DIM, border: `1px solid ${GOLD_BORDER}`, color: GOLD }}
+          >
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full"
+              style={{ background: GOLD }}
+            />
+            NTU FinTech Innovators Hackathon 2026
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
-            <span style={{ color: '#C9A227' }}>Huat</span>
+          <h1
+            className="text-5xl sm:text-6xl font-black tracking-tight mb-5 leading-[1.05]"
+            style={{ letterSpacing: '-0.02em' }}
+          >
+            <span style={{ color: GOLD }}>Wealth wellness</span>
             <br />
-            <span className="text-white/90">Wealth Wellness Hub</span>
+            <span className="text-white">for every asset you own.</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Unify your traditional and digital assets. Get AI-powered wellness scores
-            and actionable recommendations — all in one intelligent hub.
+          <p className="text-base sm:text-lg text-white/50 max-w-xl mx-auto mb-10 leading-relaxed">
+            Huat unifies your stocks, crypto, cash and private assets, computes a
+            real-time wellness score, and delivers Claude-powered recommendations.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
             <Link
               href="/auth/login"
-              className="text-base px-8 py-4 rounded-xl font-bold transition-all hover:scale-105"
-              style={{ background: '#C9A227', color: '#080808' }}
+              className="text-sm font-bold px-7 py-3 rounded-xl transition-all hover:opacity-90 active:scale-95"
+              style={{ background: GOLD, color: '#080808' }}
             >
-              Login to Dashboard
+              Sign in to dashboard
             </Link>
             <Link
               href="/auth/signup"
-              className="text-base px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105"
-              style={{ background: 'rgba(255,255,255,0.06)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}
+              className="text-sm font-medium px-7 py-3 rounded-xl transition-all hover:border-white/20"
+              style={{
+                background: 'transparent',
+                color: 'rgba(255,255,255,0.7)',
+                border: '1px solid rgba(255,255,255,0.1)',
+              }}
             >
-              Create Account
+              Create account
             </Link>
           </div>
-
         </motion.div>
       </section>
 
-      {/* Stats */}
-      <section className="relative px-6 pb-16">
-        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-6">
-          {stats.map((stat, i) => (
+      <Divider />
+
+      {/* ── METRICS STRIP ───────────────────────── */}
+      <section className="relative py-10 px-6" style={{ zIndex: 1 }}>
+        <div className="max-w-3xl mx-auto grid grid-cols-3 gap-0 divide-x divide-white/5">
+          {metrics.map((m, i) => (
             <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
-              animate={mounted ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.3 + i * 0.1 }}
-              className="text-center p-6 rounded-2xl"
-              style={{ background: 'rgba(17,17,17,0.5)', border: '1px solid rgba(255,255,255,0.06)' }}
+              key={m.label}
+              initial={{ opacity: 0 }}
+              animate={mounted ? { opacity: 1 } : {}}
+              transition={{ delay: 0.2 + i * 0.1 }}
+              className="text-center px-6 py-2"
             >
-              <div className="text-2xl font-bold mb-1" style={{ color: '#C9A227' }}>{stat.value}</div>
-              <div className="text-sm font-medium text-white/80">{stat.label}</div>
-              <div className="text-xs text-white/40 mt-0.5">{stat.desc}</div>
+              <p className="text-xl font-bold text-white mb-0.5">{m.value}</p>
+              <p className="text-xs text-white/35">{m.label}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="relative px-6 pb-24">
+      <Divider />
+
+      {/* ── PILLARS ─────────────────────────────── */}
+      <section className="relative px-6 py-24" style={{ zIndex: 1 }}>
         <div className="max-w-5xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl font-bold text-center mb-12"
+            className="mb-14 text-center"
           >
-            Everything You Need for Financial Wellness
-          </motion.h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((f, i) => (
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-3">
+              Core capabilities
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              Built for serious wealth management
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px"
+            style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, overflow: 'hidden' }}>
+            {pillars.map((p, i) => (
               <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 30 }}
+                key={p.label}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="p-6 rounded-2xl"
-                style={{
-                  background: 'rgba(17,17,17,0.7)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                }}
+                className="p-8"
+                style={{ background: '#0E0E0E' }}
               >
-                <div className="text-4xl mb-4">{f.icon}</div>
-                <h3 className="text-base font-bold mb-2 text-white">{f.title}</h3>
-                <p className="text-sm text-white/50 leading-relaxed">{f.desc}</p>
+                <div
+                  className="text-xs font-semibold uppercase tracking-widest mb-5 inline-block px-2.5 py-1 rounded-full"
+                  style={{
+                    background: `${p.accent}15`,
+                    color: p.accent,
+                    border: `1px solid ${p.accent}30`,
+                  }}
+                >
+                  {p.label}
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">{p.title}</h3>
+                <p className="text-sm text-white/45 leading-relaxed">{p.body}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="relative px-6 pb-24">
+      <Divider />
+
+      {/* ── CTA ─────────────────────────────────── */}
+      <section className="relative px-6 py-24" style={{ zIndex: 1 }}>
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center p-12 rounded-3xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(245,200,66,0.1) 0%, rgba(16,185,129,0.05) 100%)',
-            border: '1px solid rgba(245,200,66,0.2)',
-          }}
+          className="max-w-lg mx-auto text-center"
         >
-          <h2 className="text-3xl font-bold mb-4">Ready to <span style={{ color: '#C9A227' }}>Huat</span>?</h2>
-          <p className="text-white/60 mb-8">Join the platform that keeps your wealth wellness on track.</p>
+          <h2 className="text-3xl font-bold mb-3 tracking-tight">
+            Ready to <span style={{ color: GOLD }}>Huat</span>?
+          </h2>
+          <p className="text-white/45 text-sm mb-8">
+            Sign in with a demo account and explore the full platform in under a minute.
+          </p>
           <Link
-            href="/auth/signup"
-            className="inline-block text-base px-8 py-4 rounded-xl font-bold transition-all hover:scale-105"
-            style={{ background: '#C9A227', color: '#080808' }}
+            href="/auth/login"
+            className="inline-block text-sm font-bold px-8 py-3.5 rounded-xl transition-all hover:opacity-90 active:scale-95"
+            style={{ background: GOLD, color: '#080808' }}
           >
-            Get Started Free
+            Try the demo
           </Link>
         </motion.div>
       </section>
+
+      {/* Footer line */}
+      <Divider />
+      <div className="py-5 text-center text-xs text-white/20">
+        © 2026 Huat — NTU FinTech Innovators Hackathon
+      </div>
     </div>
   )
 }

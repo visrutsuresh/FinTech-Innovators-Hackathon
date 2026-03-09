@@ -1,11 +1,11 @@
 'use client'
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import type { Asset } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
 const CLASS_COLORS: Record<string, string> = {
-  stocks: '#3B82F6',
+  stocks: '#6366F1',
   crypto: '#C9A227',
   cash: '#10B981',
   bonds: '#8B5CF6',
@@ -41,32 +41,33 @@ export default function AssetDonut({ assets, totalValue }: AssetDonutProps) {
   }))
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
+    <ResponsiveContainer width="100%" height={150}>
       <PieChart>
         <Pie
           data={data}
           cx="50%"
           cy="50%"
-          innerRadius={65}
-          outerRadius={100}
-          paddingAngle={3}
+          innerRadius={42}
+          outerRadius={66}
+          paddingAngle={2}
           dataKey="value"
+          strokeWidth={0}
         >
           {data.map((entry, index) => (
-            <Cell key={index} fill={entry.color} stroke="transparent" />
+            <Cell key={index} fill={entry.color} />
           ))}
         </Pie>
         <Tooltip
           formatter={(value) => [formatCurrency(Number(value)), 'Value']}
           contentStyle={{
-            background: '#111111',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: '#111',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '8px',
-            color: 'white',
+            color: 'rgba(255,255,255,0.8)',
+            fontSize: '12px',
+            padding: '6px 10px',
           }}
-        />
-        <Legend
-          formatter={(value) => <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>{value}</span>}
+          itemStyle={{ color: 'rgba(255,255,255,0.7)' }}
         />
       </PieChart>
     </ResponsiveContainer>

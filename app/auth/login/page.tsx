@@ -7,7 +7,15 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
 import { authenticateUser } from '@/lib/mock-data'
 import { Role } from '@/types'
-import Button from '@/components/ui/Button'
+
+const GOLD = '#C9A227'
+
+const DEMO_ACCOUNTS = [
+  { email: 'adviser@demo.com', label: 'David Koh', role: 'Adviser' },
+  { email: 'alex@demo.com', label: 'Alex Chen', role: 'Client · Aggressive' },
+  { email: 'sarah@demo.com', label: 'Sarah Lim', role: 'Client · Moderate' },
+  { email: 'raymond@demo.com', label: 'Raymond Wong', role: 'Client · Conservative' },
+]
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -21,107 +29,128 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-
-    await new Promise(r => setTimeout(r, 600)) // simulate network
-
+    await new Promise(r => setTimeout(r, 500))
     const user = authenticateUser(email, password)
     if (!user) {
       setError('Invalid email or password.')
       setLoading(false)
       return
     }
-
     login(user)
-    if (user.role === Role.ADVISER) {
-      router.push('/adviser')
-    } else {
-      router.push(`/client/${user.id}`)
-    }
+    router.push(user.role === Role.ADVISER ? '/adviser' : `/client/${user.id}`)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 pt-20">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: '#080808' }}
+    >
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.45 }}
+        className="w-full max-w-sm"
       >
-        <div
-          className="p-8 rounded-2xl"
-          style={{ background: 'rgba(17,17,17,0.9)', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          <div className="text-center mb-8">
-            <div className="text-4xl font-black mb-2" style={{ color: '#C9A227' }}>Huat 🤑</div>
-            <h1 className="text-xl font-bold text-white">Welcome back</h1>
-            <p className="text-sm text-white/50 mt-1">Login to your financial hub</p>
-          </div>
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black"
+              style={{ background: GOLD, color: '#080808' }}
+            >
+              H
+            </div>
+            <span className="text-base font-bold tracking-tight">Huat</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome back</h1>
+          <p className="text-sm text-white/40 mt-1">Sign in to your account</p>
+        </div>
 
+        {/* Form */}
+        <div
+          className="rounded-2xl p-6"
+          style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-widest">Email</label>
+              <label className="block text-xs font-medium text-white/40 mb-1.5">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none transition-all"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none transition-all placeholder-white/20 focus:border-white/20"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
               />
             </div>
             <div>
-              <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-widest">Password</label>
+              <label className="block text-xs font-medium text-white/40 mb-1.5">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none placeholder-white/20"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
               />
             </div>
 
             {error && (
-              <div className="text-sm text-red-400 p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)' }}>
-                {error}
-              </div>
+              <p className="text-xs text-red-400 px-1">{error}</p>
             )}
 
-            <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full">
-              Login
-            </Button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 mt-2"
+              style={{ background: GOLD, color: '#080808' }}
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 p-4 rounded-xl space-y-1" style={{ background: 'rgba(255,255,255,0.03)' }}>
-            <p className="text-xs text-white/40 font-medium mb-2">Quick access — demo accounts</p>
-            {[
-              { email: 'adviser@demo.com', label: 'Adviser — David Koh' },
-              { email: 'alex@demo.com', label: 'Client — Alex Chen (Aggressive)' },
-              { email: 'sarah@demo.com', label: 'Client — Sarah Lim (Moderate)' },
-              { email: 'raymond@demo.com', label: 'Client — Raymond Wong (Conservative)' },
-            ].map(d => (
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+            <span className="text-xs text-white/25">or try a demo account</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          </div>
+
+          {/* Demo accounts */}
+          <div className="space-y-1.5">
+            {DEMO_ACCOUNTS.map(d => (
               <button
                 key={d.email}
                 type="button"
                 onClick={() => { setEmail(d.email); setPassword('demo123') }}
-                className="block w-full text-left text-xs px-2 py-1.5 rounded-lg hover:text-white transition-colors"
-                style={{ color: 'rgba(255,255,255,0.4)' }}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-left transition-all group"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(201,162,39,0.2)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)')}
               >
-                {d.label}
+                <div>
+                  <p className="text-xs font-medium text-white/80">{d.label}</p>
+                  <p className="text-xs text-white/35">{d.role}</p>
+                </div>
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.2)" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             ))}
           </div>
-
-          <p className="text-center text-sm text-white/40 mt-6">
-            No account?{' '}
-            <Link href="/auth/signup" className="hover:text-white transition-colors" style={{ color: '#C9A227' }}>
-              Sign up
-            </Link>
-          </p>
         </div>
+
+        <p className="text-center text-xs text-white/30 mt-5">
+          No account?{' '}
+          <Link href="/auth/signup" className="text-white/60 hover:text-white transition-colors">
+            Sign up
+          </Link>
+        </p>
       </motion.div>
     </div>
   )

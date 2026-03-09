@@ -8,7 +8,8 @@ import { useAuth } from '@/components/layout/AuthContext'
 import { Role, RiskProfile, AssetClass } from '@/types'
 import { mockClients } from '@/lib/mock-data'
 import type { Client, Adviser } from '@/types'
-import Button from '@/components/ui/Button'
+
+const GOLD = '#C9A227'
 
 export default function SignupPage() {
   const [name, setName] = useState('')
@@ -22,15 +23,12 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
-    await new Promise(r => setTimeout(r, 600))
+    await new Promise(r => setTimeout(r, 500))
 
     if (role === Role.ADVISER) {
       const newAdviser: Adviser = {
         id: `adviser-${Date.now()}`,
-        name,
-        email,
-        password,
+        name, email, password,
         role: Role.ADVISER,
         clientIds: mockClients.map(c => c.id),
       }
@@ -39,15 +37,11 @@ export default function SignupPage() {
     } else {
       const newClient: Client = {
         id: `client-new-${Date.now()}`,
-        name,
-        email,
-        password,
+        name, email, password,
         role: Role.CLIENT,
         riskProfile: RiskProfile.MODERATE,
         portfolio: {
-          assets: [
-            { id: 'new-1', name: 'Cash', assetClass: AssetClass.CASH, value: 10000, currency: 'USD' },
-          ],
+          assets: [{ id: 'new-1', name: 'Cash', assetClass: AssetClass.CASH, value: 10000, currency: 'USD' }],
           totalValue: 10000,
           lastUpdated: new Date().toISOString(),
         },
@@ -58,96 +52,120 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 pt-20">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: '#080808' }}
+    >
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.45 }}
+        className="w-full max-w-sm"
       >
-        <div
-          className="p-8 rounded-2xl"
-          style={{ background: 'rgba(17,17,17,0.9)', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          <div className="text-center mb-8">
-            <div className="text-4xl font-black mb-2" style={{ color: '#C9A227' }}>Huat 🤑</div>
-            <h1 className="text-xl font-bold text-white">Create Account</h1>
-            <p className="text-sm text-white/50 mt-1">Start your wellness journey</p>
-          </div>
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black"
+              style={{ background: GOLD, color: '#080808' }}
+            >
+              H
+            </div>
+            <span className="text-base font-bold tracking-tight">Huat</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Create account</h1>
+          <p className="text-sm text-white/40 mt-1">Start your wellness journey</p>
+        </div>
 
+        <div
+          className="rounded-2xl p-6"
+          style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-widest">Full Name</label>
+              <label className="block text-xs font-medium text-white/40 mb-1.5">Full name</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
-                placeholder="John Doe"
-                className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                placeholder="Jane Doe"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none placeholder-white/20"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
               />
             </div>
             <div>
-              <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-widest">Email</label>
+              <label className="block text-xs font-medium text-white/40 mb-1.5">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none placeholder-white/20"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
               />
             </div>
             <div>
-              <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-widest">Password</label>
+              <label className="block text-xs font-medium text-white/40 mb-1.5">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none placeholder-white/20"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
               />
             </div>
 
-            {/* Role Selection */}
+            {/* Role picker */}
             <div>
-              <label className="block text-xs text-white/50 mb-2 uppercase tracking-widest">I am a...</label>
-              <div className="grid grid-cols-2 gap-3">
-                {[Role.CLIENT, Role.ADVISER].map(r => (
+              <label className="block text-xs font-medium text-white/40 mb-2">I am a</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: Role.CLIENT, label: 'Client', sub: 'View my portfolio' },
+                  { value: Role.ADVISER, label: 'Adviser', sub: 'Manage clients' },
+                ].map(r => (
                   <button
-                    key={r}
+                    key={r.value}
                     type="button"
-                    onClick={() => setRole(r)}
-                    className="p-4 rounded-xl text-center transition-all"
+                    onClick={() => setRole(r.value)}
+                    className="p-3 rounded-xl text-left transition-all"
                     style={{
-                      background: role === r ? 'rgba(245,200,66,0.15)' : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${role === r ? 'rgba(245,200,66,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                      color: role === r ? '#C9A227' : 'rgba(255,255,255,0.5)',
+                      background: role === r.value ? 'rgba(201,162,39,0.08)' : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${role === r.value ? 'rgba(201,162,39,0.3)' : 'rgba(255,255,255,0.07)'}`,
                     }}
                   >
-                    <div className="text-2xl mb-1">{r === Role.CLIENT ? '👤' : '👨‍💼'}</div>
-                    <div className="text-sm font-medium capitalize">{r}</div>
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: role === r.value ? GOLD : 'rgba(255,255,255,0.7)' }}
+                    >
+                      {r.label}
+                    </p>
+                    <p className="text-xs text-white/35 mt-0.5">{r.sub}</p>
                   </button>
                 ))}
               </div>
             </div>
 
-            <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full">
-              Create Account
-            </Button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 mt-1"
+              style={{ background: GOLD, color: '#080808' }}
+            >
+              {loading ? 'Creating account…' : 'Create account'}
+            </button>
           </form>
-
-          <p className="text-center text-sm text-white/40 mt-6">
-            Already have an account?{' '}
-            <Link href="/auth/login" className="hover:text-white transition-colors" style={{ color: '#C9A227' }}>
-              Login
-            </Link>
-          </p>
         </div>
+
+        <p className="text-center text-xs text-white/30 mt-5">
+          Already have an account?{' '}
+          <Link href="/auth/login" className="text-white/60 hover:text-white transition-colors">
+            Sign in
+          </Link>
+        </p>
       </motion.div>
     </div>
   )
