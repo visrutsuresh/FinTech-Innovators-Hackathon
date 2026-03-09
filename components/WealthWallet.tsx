@@ -42,7 +42,7 @@ export default function WealthWallet({ portfolio }: WealthWalletProps) {
       <div>
         <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Total value</p>
         <div className="text-3xl font-bold" style={{ color: '#C9A227', letterSpacing: '-0.02em' }}>
-          $<AnimatedCounter value={portfolio.totalValue} duration={1200} />
+          $<AnimatedCounter value={portfolio.totalValue} decimals={2} duration={1200} />
         </div>
         <p className="text-xs text-white/25 mt-1">
           Updated {new Date(portfolio.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

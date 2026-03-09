@@ -13,50 +13,51 @@ const FALLBACK_PRICES: Record<string, number> = {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const symbols = searchParams.get('symbols') || 'AAPL,MSFT,TSLA,NVDA,SPY,QQQ,JPM'
+  const symbols = (searchParams.get('symbols') || 'AAPL,MSFT,TSLA,NVDA,SPY,QQQ,JPM')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
 
   const apiKey = process.env.FINAGE_API_KEY
-  if (!apiKey) {
-    console.warn('FINAGE_API_KEY not set — using fallback prices')
+  const liveEnabled = process.env.FINAGE_ENABLED !== 'false'
+
+  if (!apiKey || !liveEnabled) {
+    if (!apiKey) console.warn('FINAGE_API_KEY not set — using fallback prices')
+    if (!liveEnabled) console.info('FINAGE_ENABLED=false — using fallback prices')
     return NextResponse.json(buildFallback(symbols))
   }
 
   try {
-    const url = `https://api.finage.co.uk/last/stock/multi-quote?apikey=${apiKey}&symbols=${symbols}`
-    const res = await fetch(url, { next: { revalidate: 60 } })
+    // Finage free plan only supports single-symbol quotes — fetch all in parallel
+    const results = await Promise.allSettled(
+      symbols.map(sym =>
+        fetch(`https://api.finage.co.uk/last/stock/${sym}?apikey=${apiKey}`, {
+          next: { revalidate: 60 },
+        }).then(r => r.ok ? r.json() : null)
+      )
+    )
 
-    if (!res.ok) {
-      console.error(`Finage responded ${res.status}`)
-      return NextResponse.json(buildFallback(symbols))
-    }
-
-    // Finage returns an array: [{ s: "AAPL", p: 175.23, t: 1710000000 }, ...]
-    const data = await res.json()
     const prices: Record<string, number> = {}
-
-    if (Array.isArray(data)) {
-      for (const item of data) {
-        const symbol = item.s ?? item.symbol ?? item.ticker
-        const price = item.p ?? item.price ?? item.last ?? item.c
-        if (symbol && price != null) {
-          prices[symbol] = Number(price)
+    results.forEach((result, i) => {
+      const sym = symbols[i]
+      if (result.status === 'fulfilled' && result.value) {
+        const data = result.value as { ask?: number; bid?: number; symbol?: string }
+        // Use mid-price (ask + bid) / 2 for accuracy; fall back to ask or bid alone
+        const ask = data.ask
+        const bid = data.bid
+        if (ask != null && bid != null) {
+          prices[sym] = (ask + bid) / 2
+        } else if (ask != null) {
+          prices[sym] = ask
+        } else if (bid != null) {
+          prices[sym] = bid
         }
       }
-    } else if (typeof data === 'object') {
-      // Some Finage plans return an object keyed by symbol
-      for (const [sym, val] of Object.entries(data)) {
-        const v = val as Record<string, number>
-        const price = v.p ?? v.price ?? v.last ?? v.c
-        if (price != null) prices[sym] = Number(price)
-      }
-    }
-
-    // Fill any missing symbols with fallback
-    for (const sym of symbols.split(',')) {
+      // Fill missing with fallback
       if (!prices[sym] && FALLBACK_PRICES[sym]) {
         prices[sym] = FALLBACK_PRICES[sym]
       }
-    }
+    })
 
     return NextResponse.json(prices)
   } catch (err) {
@@ -65,9 +66,9 @@ export async function GET(request: Request) {
   }
 }
 
-function buildFallback(symbols: string): Record<string, number> {
+function buildFallback(symbols: string[]): Record<string, number> {
   const result: Record<string, number> = {}
-  for (const sym of symbols.split(',')) {
+  for (const sym of symbols) {
     result[sym] = FALLBACK_PRICES[sym] ?? 100
   }
   return result
