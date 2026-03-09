@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
 import { Role, AssetClass } from '@/types'
-import type { Client, WellnessScore, Portfolio } from '@/types'
+import type { Client, WellnessScore, Portfolio, Asset } from '@/types'
 import { calculateWellnessScore } from '@/lib/wellness'
+import { supabase } from '@/lib/supabase'
 import WealthWallet from '@/components/WealthWallet'
 import WellnessScorecard from '@/components/wellness/WellnessScorecard'
 import ScoreBreakdown from '@/components/wellness/ScoreBreakdown'
@@ -17,14 +18,38 @@ interface ClientViewProps {
   wellnessScore: WellnessScore
 }
 
+// Assets where quantity × live price = value
+const PRICE_TRACKED = [AssetClass.STOCKS, AssetClass.CRYPTO]
+
+interface EditableAsset {
+  id?: string
+  name: string
+  assetClass: AssetClass
+  value: string     // for manually-valued classes (cash, bonds, etc.)
+  quantity: string  // for stocks / crypto
+  ticker: string    // finageSymbol (stocks) or coinGeckoId (crypto)
+}
+
 const RISK_COLOR: Record<string, string> = {
   conservative: '#10B981',
   moderate: '#C9A227',
   aggressive: '#EF4444',
 }
 
-// Refresh every 15 minutes — controlled by FINAGE_ENABLED env var server-side
+const ASSET_CLASS_OPTIONS: { value: AssetClass; label: string }[] = [
+  { value: AssetClass.CASH, label: 'Cash' },
+  { value: AssetClass.STOCKS, label: 'Stocks' },
+  { value: AssetClass.CRYPTO, label: 'Crypto' },
+  { value: AssetClass.BONDS, label: 'Bonds' },
+  { value: AssetClass.REAL_ESTATE, label: 'Real Estate' },
+  { value: AssetClass.PRIVATE, label: 'Private Equity' },
+]
+
 const REFRESH_INTERVAL_MS = 15 * 60 * 1000
+
+function newEditRow(): EditableAsset {
+  return { name: '', assetClass: AssetClass.CASH, value: '', quantity: '', ticker: '' }
+}
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -49,11 +74,16 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
 
-  // Live price state — initialised from server-rendered props
   const [livePortfolio, setLivePortfolio] = useState<Portfolio>(client.portfolio)
   const [liveScore, setLiveScore] = useState<WellnessScore>(wellnessScore)
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
+
+  // Portfolio management modal
+  const [manageOpen, setManageOpen] = useState(false)
+  const [editAssets, setEditAssets] = useState<EditableAsset[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   // Auth guard
   useEffect(() => {
@@ -64,7 +94,6 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
     }
   }, [user, isLoading, client.id, router])
 
-  // Fetch fresh prices client-side and recompute portfolio + wellness score
   const refreshPrices = useCallback(async () => {
     try {
       const stockSymbols = client.portfolio.assets
@@ -105,8 +134,8 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
     }
   }, [client])
 
-  // Auto-refresh every 15 minutes — server returns fallbacks when FINAGE_ENABLED=false
   useEffect(() => {
+    refreshPrices() // Fetch live prices on mount (server skips to speed initial load)
     const interval = setInterval(refreshPrices, REFRESH_INTERVAL_MS)
     return () => clearInterval(interval)
   }, [refreshPrices])
@@ -115,6 +144,114 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
     setRefreshing(true)
     await refreshPrices()
     setRefreshing(false)
+  }
+
+  // Open manage modal pre-populated with current assets
+  const openManage = () => {
+    setEditAssets(
+      livePortfolio.assets.length > 0
+        ? livePortfolio.assets.map(a => ({
+            id: a.id,
+            name: a.name,
+            assetClass: a.assetClass,
+            // For price-tracked assets, restore quantity + ticker; otherwise restore value
+            value: PRICE_TRACKED.includes(a.assetClass) ? '' : String(a.value),
+            quantity: a.quantity != null ? String(a.quantity) : '',
+            ticker: a.finageSymbol ?? (a.isCrypto ? a.coinGeckoId ?? '' : '') ?? a.ticker ?? '',
+          }))
+        : [newEditRow()]
+    )
+    setSaveError('')
+    setManageOpen(true)
+  }
+
+  const updateEditRow = (idx: number, field: keyof EditableAsset, val: string) => {
+    setEditAssets(prev => prev.map((r, i) => i === idx ? { ...r, [field]: val } : r))
+  }
+
+  const removeEditRow = (idx: number) => {
+    setEditAssets(prev => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)
+  }
+
+  const handleSavePortfolio = async () => {
+    setSaving(true)
+    setSaveError('')
+    try {
+      const { data: portfolioData, error: pErr } = await supabase
+        .from('portfolios')
+        .select('id')
+        .eq('client_id', client.id)
+        .single()
+
+      if (pErr || !portfolioData) throw new Error('Portfolio not found')
+
+      const valid = editAssets.filter(a => {
+        if (!a.name.trim()) return false
+        return PRICE_TRACKED.includes(a.assetClass) ? parseFloat(a.quantity) > 0 : parseFloat(a.value) >= 0
+      })
+
+      await supabase.from('assets').delete().eq('portfolio_id', portfolioData.id)
+
+      // Fetch live prices for tracked assets so we can store a real value
+      const stockRows = valid.filter(a => a.assetClass === AssetClass.STOCKS && a.ticker)
+      const cryptoRows = valid.filter(a => a.assetClass === AssetClass.CRYPTO && a.ticker)
+
+      const [cryptoPrices, stockPrices] = await Promise.all([
+        cryptoRows.length > 0 ? fetch('/api/crypto').then(r => r.ok ? r.json() : {}).catch(() => ({})) : Promise.resolve({}),
+        stockRows.length > 0 ? fetch(`/api/stocks?symbols=${stockRows.map(a => a.ticker.toUpperCase()).join(',')}`).then(r => r.ok ? r.json() : {}).catch(() => ({})) : Promise.resolve({}),
+      ])
+
+      const inserts = valid.map(a => {
+        let value = 0
+        if (a.assetClass === AssetClass.STOCKS) {
+          const price = (stockPrices as Record<string, number>)[a.ticker.toUpperCase()]
+          value = price ? price * parseFloat(a.quantity) : 0
+        } else if (a.assetClass === AssetClass.CRYPTO) {
+          const price = (cryptoPrices as Record<string, { usd: number }>)[a.ticker.toLowerCase()]?.usd
+          value = price ? price * parseFloat(a.quantity) : 0
+        } else {
+          value = parseFloat(a.value || '0')
+        }
+        return {
+          portfolio_id: portfolioData.id,
+          name: a.name.trim(),
+          asset_class: a.assetClass,
+          value,
+          currency: 'USD',
+          quantity: PRICE_TRACKED.includes(a.assetClass) ? parseFloat(a.quantity) : null,
+          is_crypto: a.assetClass === AssetClass.CRYPTO,
+          finage_symbol: a.assetClass === AssetClass.STOCKS && a.ticker ? a.ticker.toUpperCase() : null,
+          coin_gecko_id: a.assetClass === AssetClass.CRYPTO && a.ticker ? a.ticker.toLowerCase() : null,
+        }
+      })
+
+      if (inserts.length > 0) await supabase.from('assets').insert(inserts)
+
+      const totalValue = inserts.reduce((s, a) => s + a.value, 0)
+      await supabase.from('portfolios').update({ total_value: totalValue, last_updated: new Date().toISOString() }).eq('id', portfolioData.id)
+
+      // Update local state with calculated values
+      const updatedAssets: Asset[] = inserts.map((a, i) => ({
+        id: valid[i].id ?? `local-${i}`,
+        name: a.name,
+        assetClass: a.asset_class as AssetClass,
+        value: a.value,
+        currency: 'USD',
+        quantity: a.quantity ?? undefined,
+        isCrypto: a.is_crypto,
+        finageSymbol: a.finage_symbol ?? undefined,
+        coinGeckoId: a.coin_gecko_id ?? undefined,
+      }))
+
+      const updatedPortfolio: Portfolio = { ...livePortfolio, assets: updatedAssets, totalValue, lastUpdated: new Date().toISOString() }
+      setLivePortfolio(updatedPortfolio)
+      setLiveScore(calculateWellnessScore(updatedPortfolio, client.riskProfile))
+      setManageOpen(false)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed')
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (isLoading || !user) {
@@ -129,18 +266,21 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
   }
 
   const riskColor = RISK_COLOR[client.riskProfile] ?? '#C9A227'
+  const editManualTotal = editAssets
+    .filter(a => !PRICE_TRACKED.includes(a.assetClass))
+    .reduce((s, a) => s + parseFloat(a.value || '0'), 0)
+  const editLiveCount = editAssets.filter(a => PRICE_TRACKED.includes(a.assetClass) && parseFloat(a.quantity) > 0).length
 
   return (
     <div className="min-h-screen px-5 md:px-8 pt-20 pb-16" style={{ background: '#080808' }}>
       <div className="max-w-6xl mx-auto">
 
-        {/* ── Page header ────────────────────────── */}
+        {/* ── Page header ── */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-start justify-between pt-4 mb-7 flex-wrap gap-3"
         >
-          {/* Left: avatar + name + badges */}
           <div className="flex items-center gap-3 flex-wrap">
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
@@ -154,37 +294,40 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
             </div>
             <span
               className="text-xs font-medium px-2.5 py-1 rounded-full ml-1 capitalize"
-              style={{
-                background: `${riskColor}12`,
-                color: riskColor,
-                border: `1px solid ${riskColor}25`,
-              }}
+              style={{ background: `${riskColor}12`, color: riskColor, border: `1px solid ${riskColor}25` }}
             >
               {client.riskProfile} risk
             </span>
             {client.investorProfile && (
               <span
                 className="text-xs font-medium px-2.5 py-1 rounded-full"
-                style={{
-                  background: 'rgba(201,162,39,0.08)',
-                  color: '#C9A227',
-                  border: '1px solid rgba(201,162,39,0.2)',
-                }}
+                style={{ background: 'rgba(201,162,39,0.08)', color: '#C9A227', border: '1px solid rgba(201,162,39,0.2)' }}
               >
                 {client.investorProfile}
               </span>
             )}
           </div>
 
-          {/* Right: last updated + refresh + back */}
           <div className="flex items-center gap-4">
+            {/* Manage portfolio — only visible to the client themselves */}
+            {user.role === Role.CLIENT && (
+              <button
+                onClick={openManage}
+                className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/80 transition-colors"
+              >
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Manage portfolio
+              </button>
+            )}
+
             <div className="flex items-center gap-2">
               <span className="text-xs text-white/25">
                 Updated {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
               <button
-                onClick={handleManualRefresh}
-                disabled={refreshing}
+                onClick={handleManualRefresh} disabled={refreshing}
                 title="Fetch latest prices now"
                 className="text-white/30 hover:text-white/70 transition-colors disabled:opacity-40"
               >
@@ -211,26 +354,15 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
           </div>
         </motion.div>
 
-        {/* ── Row 1: Portfolio + Wellness score ── */}
+        {/* ── Row 1 ── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="lg:col-span-3"
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="lg:col-span-3">
             <Card className="p-6 h-full">
               <SectionTitle>Wealth Wallet</SectionTitle>
               <WealthWallet portfolio={livePortfolio} />
             </Card>
           </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-2"
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-2">
             <Card className="p-6 h-full">
               <SectionTitle>Wellness Score</SectionTitle>
               <WellnessScorecard score={liveScore} />
@@ -238,24 +370,15 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
           </motion.div>
         </div>
 
-        {/* ── Row 2: Score breakdown + AI chatbot ── */}
+        {/* ── Row 2 ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <Card className="p-6 h-full">
               <SectionTitle>Score Breakdown</SectionTitle>
               <ScoreBreakdown score={liveScore} />
             </Card>
           </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Card className="p-6 h-full">
               <AIRecommendations
                 clientId={client.id}
@@ -268,6 +391,149 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
         </div>
 
       </div>
+
+      {/* ── Manage Portfolio Modal ── */}
+      <AnimatePresence>
+        {manageOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setManageOpen(false)}
+              className="fixed inset-0 z-50"
+              style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 mx-auto max-w-md rounded-2xl flex flex-col"
+              style={{
+                background: '#0E0E0E',
+                border: '1px solid rgba(255,255,255,0.1)',
+                maxHeight: '80vh',
+              }}
+            >
+              {/* Modal header */}
+              <div
+                className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <div>
+                  <p className="text-sm font-semibold text-white">Manage Portfolio</p>
+                  <p className="text-xs text-white/30 mt-0.5">Add, edit or remove your assets</p>
+                </div>
+                <button onClick={() => setManageOpen(false)} className="text-white/25 hover:text-white/70 transition-colors">
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Asset rows — scrollable */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2.5">
+                {editAssets.map((asset, idx) => {
+                  const tracked = PRICE_TRACKED.includes(asset.assetClass)
+                  return (
+                    <div key={idx} className="rounded-xl p-3 space-y-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      {/* Class + delete */}
+                      <div className="flex items-center gap-2">
+                        <select value={asset.assetClass} onChange={e => updateEditRow(idx, 'assetClass', e.target.value)}
+                          className="flex-1 text-xs px-2.5 py-1.5 rounded-lg outline-none text-white appearance-none cursor-pointer"
+                          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          {ASSET_CLASS_OPTIONS.map(o => <option key={o.value} value={o.value} style={{ background: '#1a1a1a' }}>{o.label}</option>)}
+                        </select>
+                        <button onClick={() => removeEditRow(idx)} disabled={editAssets.length === 1}
+                          className="text-white/20 hover:text-red-400 transition-colors disabled:opacity-20 flex-shrink-0">
+                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Name */}
+                      <input type="text" value={asset.name ?? ''} onChange={e => updateEditRow(idx, 'name', e.target.value)}
+                        placeholder="Asset name"
+                        className="w-full text-xs px-2.5 py-1.5 rounded-lg outline-none text-white placeholder-white/20"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }} />
+
+                      {/* Quantity + ticker for stocks/crypto; $ value for others */}
+                      {tracked ? (
+                        <div className="flex gap-2">
+                          <input type="text" value={asset.ticker ?? ''} onChange={e => updateEditRow(idx, 'ticker', e.target.value)}
+                            placeholder={asset.assetClass === AssetClass.STOCKS ? 'Ticker, e.g. AAPL' : 'Coin ID, e.g. bitcoin'}
+                            className="flex-1 text-xs px-2.5 py-1.5 rounded-lg outline-none text-white placeholder-white/20"
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }} />
+                          <input type="number" value={asset.quantity ?? ''} onChange={e => updateEditRow(idx, 'quantity', e.target.value)}
+                            placeholder="Qty" min="0" step="any"
+                            className="w-20 px-2.5 py-1.5 text-xs rounded-lg outline-none text-white placeholder-white/20"
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }} />
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-white/30">$</span>
+                          <input type="number" value={asset.value ?? ''} onChange={e => updateEditRow(idx, 'value', e.target.value)}
+                            placeholder="0" min="0"
+                            className="w-full pl-6 pr-2.5 py-1.5 text-xs rounded-lg outline-none text-white placeholder-white/20"
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                <button
+                  onClick={() => setEditAssets(prev => [...prev, newEditRow()])}
+                  className="w-full py-2 rounded-xl text-xs text-white/30 hover:text-white/60 transition-colors"
+                  style={{ border: '1px dashed rgba(255,255,255,0.1)' }}
+                >
+                  + Add asset
+                </button>
+              </div>
+
+              {/* Modal footer */}
+              <div
+                className="px-5 py-4 flex-shrink-0 space-y-3"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                {/* Total */}
+                <div className="space-y-1">
+                  {editManualTotal > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/35">Manual assets</span>
+                      <span className="text-xs font-semibold" style={{ color: '#C9A227' }}>
+                        ${editManualTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  {editLiveCount > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/35">Live-priced assets</span>
+                      <span className="text-xs text-white/40">{editLiveCount} × live price</span>
+                    </div>
+                  )}
+                </div>
+
+                {saveError && <p className="text-xs text-red-400">{saveError}</p>}
+
+                <button
+                  onClick={handleSavePortfolio}
+                  disabled={saving}
+                  className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                  style={{ background: '#C9A227', color: '#080808' }}
+                >
+                  {saving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
