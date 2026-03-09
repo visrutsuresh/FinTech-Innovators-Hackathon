@@ -46,32 +46,30 @@ async function fetchUserProfile(supabaseId: string): Promise<User | null> {
     } as Adviser
   }
 
-  // Client — fetch portfolio + assets
+  // Client — fetch portfolio + assets in a single joined query (1 round trip instead of 2)
   const { data: portfolio } = await supabase
     .from('portfolios')
-    .select('*')
+    .select('*, assets(*)')
     .eq('client_id', supabaseId)
     .single()
 
-  const { data: assets } = await supabase
-    .from('assets')
-    .select('*')
-    .eq('portfolio_id', portfolio?.id ?? '')
-    .order('value', { ascending: false })
-
-  const mappedAssets: Asset[] = (assets ?? []).map((a) => ({
-    id: a.id,
-    name: a.name,
-    ticker: a.ticker ?? undefined,
-    assetClass: a.asset_class as AssetClass,
-    value: Number(a.value),
-    currency: a.currency ?? 'USD',
-    quantity: a.quantity != null ? Number(a.quantity) : undefined,
-    purchasePrice: a.purchase_price != null ? Number(a.purchase_price) : undefined,
-    isCrypto: Boolean(a.is_crypto),
-    coinGeckoId: a.coin_gecko_id ?? undefined,
-    finageSymbol: a.finage_symbol ?? undefined,
-  }))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawAssets: any[] = (portfolio as any)?.assets ?? []
+  const mappedAssets: Asset[] = rawAssets
+    .sort((a, b) => Number(b.value) - Number(a.value))
+    .map((a) => ({
+      id: a.id,
+      name: a.name,
+      ticker: a.ticker ?? undefined,
+      assetClass: a.asset_class as AssetClass,
+      value: Number(a.value),
+      currency: a.currency ?? 'USD',
+      quantity: a.quantity != null ? Number(a.quantity) : undefined,
+      purchasePrice: a.purchase_price != null ? Number(a.purchase_price) : undefined,
+      isCrypto: Boolean(a.is_crypto),
+      coinGeckoId: a.coin_gecko_id ?? undefined,
+      finageSymbol: a.finage_symbol ?? undefined,
+    }))
 
   return {
     id: supabaseId,

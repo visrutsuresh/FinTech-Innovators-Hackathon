@@ -7,10 +7,10 @@
 - [!] Blocked
 
 ## Current Summary
-- Completed: 4
+- Completed: 5
 - In progress: 0
 - Blocked: 0
-- Not started: 0
+- Not started: 2
 
 ---
 
@@ -146,6 +146,38 @@ async function getLiveNetWorth(clientId: string) {
 ```
 
 If this extraction is needed in more than one place, extract the price-merge logic to `lib/prices.ts`.
+
+---
+
+### Task 5 — Portfolio Analytics Charts (wire up existing components)
+**Status:** [x] Completed
+**Expectation:** The radar chart and bar chart components exist but are never rendered. Wire WellnessRadar into the Wellness Score card and add a donut/bar toggle to the Wealth Wallet so judges can see all three chart types the PDF mentions.
+**Files to change:**
+- `components/wellness/WellnessScorecard.tsx` — add WellnessRadar below the gauge
+- `components/WealthWallet.tsx` — add tab toggle "Allocation" (donut) vs "Positions" (AssetBarChart)
+**Verification:** Open any client dashboard → Wellness Score card shows radar chart → Wealth Wallet has a tab toggle that switches between the donut allocation view and the bar chart positions view.
+
+---
+
+### Task 6 — Black Swan Stress Tester
+**Status:** [ ] Not started
+**Expectation:** Scenario toggle buttons (2008 Crisis, Crypto Winter, COVID Crash, Hyperinflation) apply realistic asset-class multipliers to the portfolio, re-rendering the Wealth Wallet and Wellness Score in real time so judges see the stressed values vs live values side by side.
+**Files to change:**
+- `components/StressTester.tsx` — new component: scenario buttons + stressed portfolio/score display
+- `app/client/[id]/ClientView.tsx` — add StressTester card below existing rows
+**Verification:** Toggle "Crypto Winter" → crypto holdings drop ~75%, total value updates, wellness score drops, a red "Stressed" banner appears. Toggle off → values restore instantly.
+
+---
+
+### Task 7 — Liquidity Stress Test
+**Status:** [ ] Not started
+**Expectation:** "Run Liquidity Stress Test" button prompts for a cash-need amount, then filters the portfolio into liquidity tiers (T+0 instant, T+2 liquid, T+30 illiquid) and shows a clear pass/fail verdict plus a T+0 vs T+30 bar chart.
+**Files to change:**
+- `types/index.ts` — add `liquidityTier?: 1 | 2 | 3` to `Asset`
+- `lib/mock-data.ts` — annotate every asset with a liquidityTier
+- `components/LiquidityTest.tsx` — new component: input + tier breakdown + verdict + stacked bar
+- `app/client/[id]/ClientView.tsx` — add LiquidityTest card
+**Verification:** Enter $50,000 → app shows T+0 and T+30 accessible cash totals → clear pass/fail result → stacked bar chart shows tier breakdown.
 
 ---
 

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import ScoreGauge from '@/components/ui/ScoreGauge'
+import WellnessRadar from '@/components/charts/WellnessRadar'
 import type { WellnessScore } from '@/types'
 import { getScoreColor, getScoreLabel } from '@/lib/utils'
 
@@ -35,6 +36,9 @@ export default function WellnessScorecard({ score }: WellnessScorecardProps) {
           <p className="text-xs text-white/35 mt-0.5">Overall wellness score</p>
         </div>
       </motion.div>
+
+      {/* Radar chart */}
+      <WellnessRadar score={score} />
 
       {/* Divider */}
       <div style={{ height: 1, background: 'rgba(255,255,255,0.05)' }} />

@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import AssetDonut from '@/components/charts/AssetDonut'
+import AssetBarChart from '@/components/charts/AssetBarChart'
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
 import type { Portfolio } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -28,7 +30,11 @@ interface WealthWalletProps {
   portfolio: Portfolio
 }
 
+type ChartTab = 'allocation' | 'positions'
+
 export default function WealthWallet({ portfolio }: WealthWalletProps) {
+  const [tab, setTab] = useState<ChartTab>('allocation')
+
   const classMap: Record<string, number> = {}
   for (const asset of portfolio.assets) {
     classMap[asset.assetClass] = (classMap[asset.assetClass] || 0) + asset.value
@@ -49,45 +55,65 @@ export default function WealthWallet({ portfolio }: WealthWalletProps) {
         </p>
       </div>
 
-      {/* Donut + allocation side by side */}
-      <div className="flex items-center gap-4">
-        <div style={{ width: 160, flexShrink: 0 }}>
-          <AssetDonut assets={portfolio.assets} totalValue={portfolio.totalValue} />
-        </div>
-
-        {/* Allocation bars */}
-        <div className="flex-1 space-y-2 min-w-0">
-          {sorted.map(([cls, value], i) => {
-            const pct = (value / portfolio.totalValue) * 100
-            const color = CLASS_COLORS[cls] ?? '#666'
-            return (
-              <motion.div
-                key={cls}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-white/60 flex items-center gap-1.5">
-                    <span className="inline-block w-2 h-2 rounded-sm" style={{ background: color }} />
-                    {CLASS_LABELS[cls] ?? cls}
-                  </span>
-                  <span className="text-xs text-white/40">{pct.toFixed(1)}%</span>
-                </div>
-                <div className="h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <motion.div
-                    className="h-full rounded-full"
-                    style={{ background: color }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
-                    transition={{ duration: 0.7, delay: i * 0.05, ease: 'easeOut' }}
-                  />
-                </div>
-              </motion.div>
-            )
-          })}
-        </div>
+      {/* Tab toggle */}
+      <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}>
+        {(['allocation', 'positions'] as ChartTab[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className="flex-1 text-xs py-1.5 rounded-md font-medium transition-all capitalize"
+            style={{
+              background: tab === t ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: tab === t ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
+            }}
+          >
+            {t === 'allocation' ? 'Allocation' : 'Bar Chart'}
+          </button>
+        ))}
       </div>
+
+      {tab === 'allocation' ? (
+        /* Donut + allocation bars */
+        <div className="flex items-center gap-4">
+          <div style={{ width: 160, flexShrink: 0 }}>
+            <AssetDonut assets={portfolio.assets} totalValue={portfolio.totalValue} />
+          </div>
+          <div className="flex-1 space-y-2 min-w-0">
+            {sorted.map(([cls, value], i) => {
+              const pct = (value / portfolio.totalValue) * 100
+              const color = CLASS_COLORS[cls] ?? '#666'
+              return (
+                <motion.div
+                  key={cls}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-white/60 flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-sm" style={{ background: color }} />
+                      {CLASS_LABELS[cls] ?? cls}
+                    </span>
+                    <span className="text-xs text-white/40">{pct.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: color }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.7, delay: i * 0.05, ease: 'easeOut' }}
+                    />
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        /* Bar chart — positions by value */
+        <AssetBarChart assets={portfolio.assets} />
+      )}
 
       {/* Divider */}
       <div style={{ height: 1, background: 'rgba(255,255,255,0.05)' }} />

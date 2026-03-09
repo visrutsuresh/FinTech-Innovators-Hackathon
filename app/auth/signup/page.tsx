@@ -137,25 +137,24 @@ export default function SignupPage() {
 
       const userId = data.user.id
 
-      // Insert profile
-      await supabase.from('profiles').insert({
-        id: userId, name, email,
-        role: 'client',
-        risk_profile: profile.riskProfile,
-        investor_profile: profile.name,
-      })
+      // Insert profile + portfolio in parallel (neither depends on the other)
+      const [, portfolioResult] = await Promise.all([
+        supabase.from('profiles').insert({
+          id: userId, name, email,
+          role: 'client',
+          risk_profile: profile.riskProfile,
+          investor_profile: profile.name,
+        }),
+        supabase.from('portfolios')
+          .insert({ client_id: userId, total_value: 10000 })
+          .select()
+          .single(),
+      ])
 
-      // Insert starter portfolio
-      const { data: portfolio } = await supabase
-        .from('portfolios')
-        .insert({ client_id: userId, total_value: 10000 })
-        .select()
-        .single()
-
-      // Insert starter asset
-      if (portfolio) {
+      // Insert starter asset (needs portfolio.id from above)
+      if (portfolioResult.data) {
         await supabase.from('assets').insert({
-          portfolio_id: portfolio.id,
+          portfolio_id: portfolioResult.data.id,
           name: 'Cash',
           asset_class: AssetClass.CASH,
           value: 10000,
@@ -163,7 +162,7 @@ export default function SignupPage() {
         })
       }
 
-      // Sign in to establish session (triggers onAuthStateChange → profile load)
+      // Re-sign-in so onAuthStateChange fires after DB records exist (profile load works)
       await supabase.auth.signInWithPassword({ email, password })
       router.push(`/client/${userId}`)
     } catch (err) {
