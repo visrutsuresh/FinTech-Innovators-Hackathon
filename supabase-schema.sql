@@ -59,6 +59,45 @@ CREATE POLICY "own assets write"    ON assets     FOR ALL USING (
   portfolio_id IN (SELECT id FROM portfolios WHERE client_id = auth.uid())
 );
 
+-- ── Portfolio Templates (starter dashboards by risk profile) ───
+-- Copy into new user portfolios for instant populated dashboard
+CREATE TABLE IF NOT EXISTS portfolio_templates (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  risk_profile   TEXT NOT NULL CHECK (risk_profile IN ('conservative', 'moderate', 'aggressive')),
+  name           TEXT NOT NULL,
+  asset_class    TEXT NOT NULL,
+  value          NUMERIC NOT NULL DEFAULT 0,
+  currency       TEXT NOT NULL DEFAULT 'USD',
+  quantity       NUMERIC,
+  is_crypto      BOOLEAN NOT NULL DEFAULT FALSE,
+  coin_gecko_id  TEXT,
+  finage_symbol  TEXT,
+  sort_order     INT DEFAULT 0
+);
+
+-- Allow public read of templates (used during signup)
+ALTER TABLE portfolio_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anyone read templates" ON portfolio_templates FOR SELECT USING (true);
+
+-- Seed starter templates. Run once. Uses DO block for idempotency.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM portfolio_templates LIMIT 1) THEN
+    INSERT INTO portfolio_templates (risk_profile, name, asset_class, value, currency, quantity, is_crypto, coin_gecko_id, finage_symbol, sort_order) VALUES
+      ('conservative', 'Cash', 'cash', 50000, 'USD', NULL, false, NULL, NULL, 0),
+      ('conservative', 'Treasury Bonds', 'bonds', 30000, 'USD', NULL, false, NULL, NULL, 1),
+      ('conservative', 'S&P 500 ETF', 'stocks', 20000, 'USD', 45, false, NULL, 'SPY', 2),
+      ('moderate', 'Cash', 'cash', 25000, 'USD', NULL, false, NULL, NULL, 0),
+      ('moderate', 'S&P 500 ETF', 'stocks', 40000, 'USD', 90, false, NULL, 'SPY', 1),
+      ('moderate', 'Bitcoin', 'crypto', 15000, 'USD', 0.25, true, 'bitcoin', NULL, 2),
+      ('moderate', 'Bonds', 'bonds', 20000, 'USD', NULL, false, NULL, NULL, 3),
+      ('aggressive', 'Cash', 'cash', 10000, 'USD', NULL, false, NULL, NULL, 0),
+      ('aggressive', 'S&P 500 ETF', 'stocks', 50000, 'USD', 110, false, NULL, 'SPY', 1),
+      ('aggressive', 'Bitcoin', 'crypto', 25000, 'USD', 0.5, true, 'bitcoin', NULL, 2),
+      ('aggressive', 'Ethereum', 'crypto', 10000, 'USD', 3, true, 'ethereum', NULL, 3);
+  END IF;
+END $$;
+
 -- ── Chat Messages ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS chat_messages (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

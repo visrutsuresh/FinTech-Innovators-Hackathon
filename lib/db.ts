@@ -54,19 +54,19 @@ export async function getClientById(id: string): Promise<Client | null> {
 
   if (error || !profile) return null
 
-  const { data: portfolio } = await db
+  // Fetch portfolio + assets in one query (faster)
+  const { data: portfolioRow } = await db
     .from('portfolios')
-    .select('*')
+    .select('*, assets(*)')
     .eq('client_id', id)
     .single()
 
-  const { data: assets } = await db
-    .from('assets')
-    .select('*')
-    .eq('portfolio_id', portfolio?.id ?? '')
-    .order('value', { ascending: false })
+  const portfolio = portfolioRow ? { id: portfolioRow.id, total_value: portfolioRow.total_value, last_updated: portfolioRow.last_updated } : null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawAssets: any[] = (portfolioRow as { assets?: any[] } | null)?.assets ?? []
+  const assets = rawAssets.slice().sort((a, b) => (Number(b?.value) ?? 0) - (Number(a?.value) ?? 0))
 
-  return mapClient(profile, portfolio, assets ?? [])
+  return mapClient(profile, portfolio, assets)
 }
 
 export async function getAllClients(): Promise<Client[]> {
