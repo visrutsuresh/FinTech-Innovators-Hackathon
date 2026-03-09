@@ -56,6 +56,7 @@ export interface Client {
   portfolio: Portfolio
   wellnessScore?: WellnessScore
   adviserId?: string
+  investorProfile?: string
 }
 
 export interface Adviser {
@@ -69,12 +70,18 @@ export interface Adviser {
 
 export type User = Client | Adviser
 
+export interface ConversationMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
 export interface RecommendationRequest {
   clientId: string
   portfolio: Portfolio
   wellnessScore: WellnessScore
   riskProfile: RiskProfile
   scenario?: string
+  conversationHistory?: ConversationMessage[]
 }
 
 export interface Recommendation {
@@ -85,6 +92,8 @@ export interface Recommendation {
 }
 
 export interface RecommendationResponse {
+  type?: 'chat' | 'recommendations'
+  message?: string
   recommendations: Recommendation[]
   summary: string
   marketContext: string
