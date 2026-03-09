@@ -1,16 +1,19 @@
 import { AssetClass, RiskProfile, type Portfolio, type WellnessScore } from '@/types'
 
+// Round for stable scoring — same assets/quantities should yield same score despite tiny price changes
+const round2 = (n: number) => Math.round(n * 100) / 100
+const round3 = (n: number) => Math.round(n * 1000) / 1000
+
 export function calculateDiversificationScore(portfolio: Portfolio): number {
   if (!portfolio.assets.length) return 0
 
   const classValues: Record<string, number> = {}
-  const total = portfolio.totalValue || portfolio.assets.reduce((s, a) => s + a.value, 0)
-  if (total === 0) return 0
-
   for (const asset of portfolio.assets) {
     const cls = asset.assetClass
-    classValues[cls] = (classValues[cls] || 0) + asset.value
+    classValues[cls] = (classValues[cls] || 0) + round2(asset.value)
   }
+  const total = Object.values(classValues).reduce((s, v) => s + v, 0)
+  if (total === 0) return 0
 
   // HHI: sum of squared weights
   const weights = Object.values(classValues).map(v => v / total)
@@ -26,15 +29,15 @@ export function calculateDiversificationScore(portfolio: Portfolio): number {
 }
 
 export function calculateLiquidityScore(portfolio: Portfolio): number {
-  const total = portfolio.totalValue || portfolio.assets.reduce((s, a) => s + a.value, 0)
+  const total = round2(portfolio.assets.reduce((s, a) => s + a.value, 0))
   if (total === 0) return 0
 
   const liquidClasses = [AssetClass.CASH, AssetClass.STOCKS, AssetClass.CRYPTO, AssetClass.BONDS]
-  const liquidValue = portfolio.assets
+  const liquidValue = round2(portfolio.assets
     .filter(a => liquidClasses.includes(a.assetClass))
-    .reduce((s, a) => s + a.value, 0)
+    .reduce((s, a) => s + a.value, 0))
 
-  const liquidRatio = liquidValue / total
+  const liquidRatio = round3(liquidValue / total) // stable across small price wobbles
 
   // Score: 100% liquid = 100, <20% liquid = 10
   if (liquidRatio >= 0.9) return 95
@@ -49,18 +52,18 @@ export function calculateBehavioralResilienceScore(
   portfolio: Portfolio,
   riskProfile: RiskProfile
 ): number {
-  const total = portfolio.totalValue || portfolio.assets.reduce((s, a) => s + a.value, 0)
+  const total = round2(portfolio.assets.reduce((s, a) => s + a.value, 0))
   if (total === 0) return 50
 
-  const cryptoValue = portfolio.assets
+  const cryptoValue = round2(portfolio.assets
     .filter(a => a.assetClass === AssetClass.CRYPTO)
-    .reduce((s, a) => s + a.value, 0)
-  const cryptoRatio = cryptoValue / total
+    .reduce((s, a) => s + a.value, 0))
+  const cryptoRatio = round3(cryptoValue / total)
 
-  const privateValue = portfolio.assets
+  const privateValue = round2(portfolio.assets
     .filter(a => a.assetClass === AssetClass.PRIVATE)
-    .reduce((s, a) => s + a.value, 0)
-  const privateRatio = privateValue / total
+    .reduce((s, a) => s + a.value, 0))
+  const privateRatio = round3(privateValue / total)
 
   let score = 70
 
