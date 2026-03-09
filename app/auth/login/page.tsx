@@ -39,14 +39,14 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4"
+      className="min-h-screen flex items-center justify-center px-4 py-6 sm:py-10 sm:px-6"
       style={{ background: '#080808' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
-        className="w-full max-w-sm"
+        transition={{ duration: 0.25 }}
+        className="w-full max-w-sm sm:max-w-md"
       >
         {/* Logo */}
         <div className="text-center mb-8">

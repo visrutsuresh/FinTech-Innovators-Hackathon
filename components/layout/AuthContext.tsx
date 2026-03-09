@@ -46,18 +46,17 @@ async function fetchUserProfile(supabaseId: string): Promise<User | null> {
     } as Adviser
   }
 
-  // Client — fetch portfolio + assets
-  const { data: portfolio } = await supabase
+  // Client — fetch portfolio with assets in one query (faster than 2 round trips)
+  const { data: portfolioRow } = await supabase
     .from('portfolios')
-    .select('*')
+    .select('*, assets(*)')
     .eq('client_id', supabaseId)
     .single()
 
-  const { data: assets } = await supabase
-    .from('assets')
-    .select('*')
-    .eq('portfolio_id', portfolio?.id ?? '')
-    .order('value', { ascending: false })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawAssets: any[] = (portfolioRow as { assets?: any[] } | null)?.assets ?? []
+  const portfolio = portfolioRow ? { id: portfolioRow.id, total_value: portfolioRow.total_value, last_updated: portfolioRow.last_updated } : null
+  const assets = rawAssets.slice().sort((a, b) => (Number(b?.value) ?? 0) - (Number(a?.value) ?? 0))
 
   const mappedAssets: Asset[] = (assets ?? []).map((a) => ({
     id: a.id,
@@ -133,8 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
+    setUser(null) // Clear UI immediately so profile/avatar disappear right away
     await supabase.auth.signOut()
-    setUser(null)
   }
 
   return (
