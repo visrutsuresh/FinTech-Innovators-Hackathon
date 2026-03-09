@@ -95,7 +95,10 @@ export default function SignupPage() {
     if (role === Role.ADVISER) {
       setLoading(true)
       try {
-        const { data, error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({
+          email, password,
+          options: { data: { role: 'adviser', name } },
+        })
         if (error) throw error
         if (!data.user) throw new Error('Signup failed')
         await supabase.from('profiles').insert({
@@ -131,7 +134,10 @@ export default function SignupPage() {
     setLoading(true)
     try {
       // Create auth user
-      const { data, error } = await supabase.auth.signUp({ email, password })
+      const { data, error } = await supabase.auth.signUp({
+        email, password,
+        options: { data: { role: 'client', name } },
+      })
       if (error) throw error
       if (!data.user) throw new Error('Signup failed')
 

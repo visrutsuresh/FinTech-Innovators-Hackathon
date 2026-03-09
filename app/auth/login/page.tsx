@@ -29,8 +29,8 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const user = await login(email, password)
-      router.push(user.role === Role.ADVISER ? '/adviser' : `/client/${user.id}`)
+      const { id, role } = await login(email, password)
+      router.push(role === Role.ADVISER ? '/adviser' : `/client/${id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid email or password.')
       setLoading(false)

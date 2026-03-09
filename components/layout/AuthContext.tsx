@@ -8,14 +8,14 @@ import type { User, Client, Adviser, Asset } from '@/types'
 interface AuthState {
   user: User | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<User>
+  login: (email: string, password: string) => Promise<{ id: string; role: Role }>
   logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState>({
   user: null,
   isLoading: true,
-  login: async () => { throw new Error('AuthProvider not mounted') },
+  login: async () => { throw new Error('AuthProvider not mounted') as never },
   logout: async () => {},
 })
 
@@ -121,13 +121,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [loadUser])
 
-  const login = async (email: string, password: string): Promise<User> => {
+  const login = async (email: string, password: string): Promise<{ id: string; role: Role }> => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error(error.message)
-    const appUser = await fetchUserProfile(data.user.id)
-    if (!appUser) throw new Error('Account found but profile is missing. Please contact support.')
-    setUser(appUser)
-    return appUser
+    // Role is stored in auth metadata at signup — no extra DB query needed.
+    // onAuthStateChange (fired above by signInWithPassword) loads the full profile in background.
+    const metaRole = data.user.user_metadata?.role
+    const role = metaRole === 'adviser' ? Role.ADVISER : Role.CLIENT
+    return { id: data.user.id, role }
   }
 
   const logout = async () => {
