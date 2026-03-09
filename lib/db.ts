@@ -79,25 +79,36 @@ export async function getAllClients(): Promise<Client[]> {
 
   if (error || !profiles?.length) return []
 
-  const clients = await Promise.all(
-    profiles.map(async (profile) => {
-      const { data: portfolio } = await db
-        .from('portfolios')
-        .select('*')
-        .eq('client_id', profile.id)
-        .single()
+  // Batch: fetch all portfolios in one query instead of N+1
+  const clientIds = profiles.map((p) => p.id)
+  const { data: portfolios } = await db.from('portfolios').select('*').in('client_id', clientIds)
 
-      const { data: assets } = await db
-        .from('assets')
-        .select('*')
-        .eq('portfolio_id', portfolio?.id ?? '')
-        .order('value', { ascending: false })
-
-      return mapClient(profile, portfolio, assets ?? [])
-    })
+  // Build portfolio lookup
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const portfolioByClientId = new Map<string, any>(
+    (portfolios ?? []).map((p) => [p.client_id, p])
   )
 
-  return clients
+  // Fetch assets for all portfolio ids in one query
+  const portfolioIds = (portfolios ?? []).map((p) => p.id)
+  const { data: assets } = portfolioIds.length
+    ? await db.from('assets').select('*').in('portfolio_id', portfolioIds).order('value', { ascending: false })
+    : { data: [] }
+
+  // Build assets lookup by portfolio_id
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const assetsByPortfolioId = new Map<string, any[]>()
+  for (const asset of assets ?? []) {
+    const list = assetsByPortfolioId.get(asset.portfolio_id) ?? []
+    list.push(asset)
+    assetsByPortfolioId.set(asset.portfolio_id, list)
+  }
+
+  return profiles.map((profile) => {
+    const portfolio = portfolioByClientId.get(profile.id) ?? null
+    const clientAssets = portfolio ? (assetsByPortfolioId.get(portfolio.id) ?? []) : []
+    return mapClient(profile, portfolio, clientAssets)
+  })
 }
 
 export async function getAdviserByEmail(email: string): Promise<Adviser | null> {

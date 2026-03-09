@@ -110,7 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     // Keep in sync with Supabase auth state changes
+    // Skip SIGNED_IN — login() already calls fetchUserProfile explicitly to avoid a double fetch
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') return
       if (session?.user) {
         await loadUser(session.user.id)
       } else {
