@@ -29,6 +29,7 @@ export interface Asset {
   purchasePrice?: number
   isCrypto?: boolean
   coinGeckoId?: string
+  finageSymbol?: string
 }
 
 export interface Portfolio {
