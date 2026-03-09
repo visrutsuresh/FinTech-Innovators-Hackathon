@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/layout/AuthContext'
@@ -8,6 +8,11 @@ import ChatPanel from '@/components/layout/ChatPanel'
 import MainLayout from '@/components/layout/MainLayout'
 
 const inter = Inter({ subsets: ['latin'] })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const metadata: Metadata = {
   title: 'Huat — Wealth Wellness Hub',

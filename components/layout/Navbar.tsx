@@ -7,7 +7,7 @@ import { useAuth, Role } from './AuthContext'
 import { useChatPanel } from './ChatPanelContext'
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, logout, isLoading } = useAuth()
   const { isOpen, toggle } = useChatPanel()
   const router = useRouter()
 
@@ -47,7 +47,7 @@ export default function Navbar() {
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        {user ? (
+        {user && !isLoading ? (
           <>
             <div className="hidden sm:flex items-center gap-2">
               <div

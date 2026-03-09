@@ -24,6 +24,12 @@ const CLASS_LABELS: Record<string, string> = {
   private: 'Private',
 }
 
+function formatQuantity(q: number): string {
+  if (q >= 1000) return q.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  if (q >= 1) return q.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })
+  return q.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 6 })
+}
+
 interface WealthWalletProps {
   portfolio: Portfolio
 }
@@ -58,7 +64,7 @@ export default function WealthWallet({ portfolio }: WealthWalletProps) {
         {/* Allocation bars */}
         <div className="flex-1 space-y-2 min-w-0">
           {sorted.map(([cls, value], i) => {
-            const pct = (value / portfolio.totalValue) * 100
+            const pct = portfolio.totalValue > 0 ? (value / portfolio.totalValue) * 100 : 0
             const color = CLASS_COLORS[cls] ?? '#666'
             return (
               <motion.div
@@ -110,9 +116,15 @@ export default function WealthWallet({ portfolio }: WealthWalletProps) {
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   style={{ background: CLASS_COLORS[asset.assetClass] ?? '#666' }}
                 />
-                <span className="text-xs text-white/70 truncate">{asset.name}</span>
-                {asset.ticker && (
-                  <span className="text-xs text-white/25 flex-shrink-0">{asset.ticker}</span>
+                <span className="text-xs text-white/70 truncate">
+                  {asset.quantity != null && asset.quantity > 0
+                    ? `${formatQuantity(asset.quantity)} × ${asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId ?? asset.name}`
+                    : asset.name}
+                </span>
+                {(asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId) && asset.quantity == null && (
+                  <span className="text-xs text-white/25 flex-shrink-0">
+                    {asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId}
+                  </span>
                 )}
               </div>
               <span className="text-xs font-medium text-white/80 flex-shrink-0 ml-2">

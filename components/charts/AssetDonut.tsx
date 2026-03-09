@@ -33,10 +33,11 @@ export default function AssetDonut({ assets, totalValue }: AssetDonutProps) {
     classMap[asset.assetClass] = (classMap[asset.assetClass] || 0) + asset.value
   }
 
+  const safeTotal = totalValue > 0 ? totalValue : 1
   const data = Object.entries(classMap).map(([cls, value]) => ({
     name: CLASS_LABELS[cls] || cls,
     value,
-    percentage: ((value / totalValue) * 100).toFixed(1),
+    percentage: ((value / safeTotal) * 100).toFixed(1),
     color: CLASS_COLORS[cls] || '#666',
   }))
 
