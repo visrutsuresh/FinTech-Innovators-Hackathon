@@ -8,7 +8,7 @@ Huat is an integrated financial wellness platform that unifies a client's tradit
 
 ## Live Demo
 
-**Deployment:** [https://huat.vercel.app](https://huat.vercel.app) *(update with live URL)*
+**Deployment:** [https://huat.vercel.app](https://fin-tech-innovators-hackathon-gny2.vercel.app/)) 
 
 All demo accounts share password: `demo123`
 
