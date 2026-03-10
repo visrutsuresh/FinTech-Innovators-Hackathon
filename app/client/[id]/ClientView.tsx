@@ -11,7 +11,6 @@ import { supabase } from '@/lib/supabase'
 import WealthWallet from '@/components/WealthWallet'
 import WellnessScorecard from '@/components/wellness/WellnessScorecard'
 import ScoreBreakdown from '@/components/wellness/ScoreBreakdown'
-import AIRecommendations from '@/components/AIRecommendations'
 import { useFeaturePanel } from '@/components/layout/FeaturePanelContext'
 
 interface ClientViewProps {
@@ -387,24 +386,12 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
         </div>
 
         {/* ── Row 2 ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <Card className="p-6 h-full">
-              <SectionTitle>Score Breakdown</SectionTitle>
-              <ScoreBreakdown score={liveScore} />
-            </Card>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="p-6 h-full">
-              <AIRecommendations
-                clientId={client.id}
-                portfolio={livePortfolio}
-                wellnessScore={liveScore}
-                riskProfile={client.riskProfile}
-              />
-            </Card>
-          </motion.div>
-        </div>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card className="p-6">
+            <SectionTitle>Score Breakdown</SectionTitle>
+            <ScoreBreakdown score={liveScore} />
+          </Card>
+        </motion.div>
 
       </div>
 
