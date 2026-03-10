@@ -8,6 +8,7 @@ import { getScoreColor } from '@/lib/utils'
 
 interface SummaryStatsProps {
   clients: Client[]
+  privacyMode?: boolean
 }
 
 function IconAUM() {
@@ -41,7 +42,7 @@ function IconAlert() {
   )
 }
 
-export default function SummaryStats({ clients }: SummaryStatsProps) {
+export default function SummaryStats({ clients, privacyMode = false }: SummaryStatsProps) {
   const totalAUM = clients.reduce((s, c) => s + c.portfolio.totalValue, 0)
   const wellnessScores = clients.map(c => calculateWellnessScore(c.portfolio, c.riskProfile))
   const avgWellness = clients.length > 0
@@ -52,8 +53,12 @@ export default function SummaryStats({ clients }: SummaryStatsProps) {
   const stats = [
     {
       label: 'Total AUM',
-      sub: 'across all clients',
-      node: (
+      sub: privacyMode ? 'hidden (privacy mode)' : 'across all clients',
+      node: privacyMode ? (
+        <span className="text-2xl font-bold text-white tabular-nums">
+          ••••
+        </span>
+      ) : (
         <span className="text-2xl font-bold text-white tabular-nums">
           $<AnimatedCounter
             value={totalAUM >= 1_000_000 ? totalAUM / 1_000_000 : totalAUM / 1_000}

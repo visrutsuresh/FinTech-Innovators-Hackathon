@@ -1,10 +1,11 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
-import { Role, AssetClass } from '@/types'
+import { Role, AssetClass, RiskProfile } from '@/types'
 import type { Client, WellnessScore, Portfolio, Asset } from '@/types'
 import { calculateWellnessScore } from '@/lib/wellness'
 import { getArchetype } from '@/lib/archetypes'
@@ -14,6 +15,9 @@ import WellnessScorecard from '@/components/wellness/WellnessScorecard'
 import ScoreBreakdown from '@/components/wellness/ScoreBreakdown'
 import { useFeaturePanel } from '@/components/layout/FeaturePanelContext'
 import { GlowingEffect } from '@/components/ui/glowing-effect'
+import shieldIcon from '@/shield.webp'
+import knightIcon from '@/knight.webp'
+import wizardIcon from '@/wizard.webp'
 
 interface ClientViewProps {
   client: Client
@@ -22,6 +26,36 @@ interface ClientViewProps {
 
 // Assets where quantity × live price = value
 const PRICE_TRACKED = [AssetClass.STOCKS, AssetClass.CRYPTO]
+
+const STOCK_TICKER_OPTIONS = [
+  'AAPL', 'MSFT', 'TSLA', 'NVDA', 'SPY',
+  'QQQ', 'JPM', 'GOOGL', 'AMZN', 'META',
+  'NFLX', 'BABA', 'V', 'MA', 'BRK.B',
+]
+
+const CRYPTO_TICKER_OPTIONS = [
+  'bitcoin',
+  'ethereum',
+  'solana',
+  'matic-network',
+  'dogecoin',
+  'ripple',
+  'cardano',
+  'polkadot',
+  'litecoin',
+  'avalanche-2',
+  'chainlink',
+  'uniswap',
+  'pepe',
+  'weth',
+  'usd-coin',
+]
+
+const ARCHETYPE_ICON: Record<RiskProfile, typeof shieldIcon> = {
+  [RiskProfile.CONSERVATIVE]: shieldIcon,
+  [RiskProfile.MODERATE]: knightIcon,
+  [RiskProfile.AGGRESSIVE]: wizardIcon,
+}
 
 interface EditableAsset {
   id?: string
@@ -208,15 +242,41 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
     setSaving(true)
     setSaveError('')
     try {
+      // Look up (or lazily create) the client's portfolio row.
+      let portfolioId: string | null = null
+
       const { data: portfolioData, error: pErr } = await supabase
         .from('portfolios')
         .select('id')
         .eq('client_id', client.id)
         .single()
 
-      if (pErr || !portfolioData) throw new Error('Portfolio not found')
+      if (portfolioData?.id) {
+        portfolioId = portfolioData.id
+      } else {
+        // If the client somehow doesn't have a portfolio row yet (e.g. legacy seed),
+        // create a minimal one so we can attach assets to it.
+        const { data: created, error: cErr } = await supabase
+          .from('portfolios')
+          .insert({
+            client_id: client.id,
+            total_value: 0,
+            last_updated: new Date().toISOString(),
+          })
+          .select('id')
+          .single()
 
-      const valid = editAssets.filter(a => {
+        if (cErr || !created?.id) {
+          throw new Error('Unable to create portfolio for this client.')
+        }
+        portfolioId = created.id
+      }
+
+      if (!portfolioId) {
+        throw new Error('Unable to resolve portfolio for this client.')
+      }
+
+      const allValid = editAssets.every(a => {
         if (!a.name.trim()) return false
         if (PRICE_TRACKED.includes(a.assetClass)) {
           const qty = parseFloat(a.quantity)
@@ -226,18 +286,21 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
         return !isNaN(val) && val >= 0
       })
 
-      if (valid.length === 0) {
-        setSaveError('Add at least one asset with a valid name and value before saving.')
+      if (!allValid || editAssets.length === 0) {
+        setSaveError('Please give every asset a name and valid amount/quantity, or remove rows you do not need.')
         setSaving(false)
         return
       }
+      const valid = editAssets
 
       // Fetch live prices BEFORE touching the DB — if this fails, existing data is safe
       const stockRows = valid.filter(a => a.assetClass === AssetClass.STOCKS && a.ticker)
       const cryptoRows = valid.filter(a => a.assetClass === AssetClass.CRYPTO && a.ticker)
 
       const [cryptoPrices, stockPrices] = await Promise.all([
-        cryptoRows.length > 0 ? fetch('/api/crypto').then(r => r.ok ? r.json() : {}).catch(() => ({})) : Promise.resolve({}),
+        cryptoRows.length > 0
+          ? fetch(`/api/crypto?ids=${cryptoRows.map(a => a.ticker.toLowerCase()).join(',')}`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+          : Promise.resolve({}),
         stockRows.length > 0 ? fetch(`/api/stocks?symbols=${stockRows.map(a => a.ticker.toUpperCase()).join(',')}`).then(r => r.ok ? r.json() : {}).catch(() => ({})) : Promise.resolve({}),
       ])
 
@@ -255,7 +318,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
           value = parseFloat(a.value || '0')
         }
         return {
-          portfolio_id: portfolioData.id,
+          portfolio_id: portfolioId,
           name: a.name.trim(),
           asset_class: a.assetClass,
           value,
@@ -268,11 +331,11 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
       })
 
       // Delete existing assets only after inserts are fully prepared — atomic swap
-      await supabase.from('assets').delete().eq('portfolio_id', portfolioData.id)
+      await supabase.from('assets').delete().eq('portfolio_id', portfolioId)
       if (inserts.length > 0) await supabase.from('assets').insert(inserts)
 
       const totalValue = inserts.reduce((s, a) => s + a.value, 0)
-      await supabase.from('portfolios').update({ total_value: totalValue, last_updated: new Date().toISOString() }).eq('id', portfolioData.id)
+      await supabase.from('portfolios').update({ total_value: totalValue, last_updated: new Date().toISOString() }).eq('id', portfolioId)
 
       // Update local state with calculated values
       const updatedAssets: Asset[] = inserts.map((a, i) => ({
@@ -309,6 +372,9 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
     )
   }
 
+  const isOwner = user.role === Role.CLIENT && user.id === client.id
+  const maskForViewer = !isOwner && privacyMode
+
   const editManualTotal = editAssets
     .filter(a => !PRICE_TRACKED.includes(a.assetClass))
     .reduce((s, a) => s + (parseFloat(a.value) || 0), 0)
@@ -339,7 +405,20 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white tracking-tight" style={{ letterSpacing: '-0.02em' }}>
-                {client.name}
+                <span className="inline-flex items-center gap-2">
+                  <span>{client.name}</span>
+                  {ARCHETYPE_ICON[client.riskProfile] && (
+                    <div className="h-6 w-6 rounded-full bg-black/70 flex items-center justify-center">
+                      <Image
+                        src={ARCHETYPE_ICON[client.riskProfile]}
+                        alt={getArchetype(client.riskProfile)}
+                        className="h-4 w-4 object-contain"
+                        width={16}
+                        height={16}
+                      />
+                    </div>
+                  )}
+                </span>
               </h1>
               <p className="text-xs" style={{ color: 'var(--text-caption)' }}>{client.email}</p>
             </div>
@@ -442,7 +521,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="lg:col-span-3">
             <Card className="p-6 h-full">
               <SectionTitle>Wealth Wallet</SectionTitle>
-              <WealthWallet portfolio={livePortfolio} privacyMode={privacyMode} />
+              <WealthWallet portfolio={livePortfolio} privacyMode={maskForViewer} />
             </Card>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-2">
@@ -501,7 +580,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
               >
                 <div>
                   <p className="text-sm font-semibold text-white">Manage Portfolio</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Add, edit or remove your assets</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Review existing positions or add new ones</p>
                 </div>
                 <button
                   onClick={() => setManageOpen(false)}
@@ -527,8 +606,22 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2.5">
                 {editAssets.map((asset, idx) => {
                   const tracked = PRICE_TRACKED.includes(asset.assetClass)
+                  const isExisting = Boolean(asset.id)
                   return (
                     <div key={idx} className="rounded-xl p-3 space-y-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      {/* Existing vs new badge */}
+                      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.16em] mb-1">
+                        <span
+                          className="px-2 py-0.5 rounded-full"
+                          style={{
+                            background: isExisting ? 'rgba(34,197,94,0.08)' : 'rgba(59,130,246,0.08)',
+                            color: isExisting ? 'rgba(34,197,94,0.9)' : 'rgba(129,199,245,0.9)',
+                            border: `1px solid ${isExisting ? 'rgba(34,197,94,0.3)' : 'rgba(129,199,245,0.35)'}`,
+                          }}
+                        >
+                          {isExisting ? 'Existing position' : 'New position'}
+                        </span>
+                      </div>
                       {/* Class + delete */}
                       <div className="flex items-center gap-2">
                         <select value={asset.assetClass} onChange={e => updateEditRow(idx, 'assetClass', e.target.value)}
@@ -553,14 +646,31 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
                       {/* Quantity + ticker for stocks/crypto; $ value for others */}
                       {tracked ? (
                         <div className="flex gap-2">
-                          <input type="text" value={asset.ticker ?? ''} onChange={e => updateEditRow(idx, 'ticker', e.target.value)}
-                            placeholder={asset.assetClass === AssetClass.STOCKS ? 'Ticker, e.g. AAPL' : 'Coin ID, e.g. bitcoin'}
-                            className="flex-1 text-xs px-2.5 py-1.5 rounded-lg outline-none text-white placeholder-white/20"
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }} />
-                          <input type="number" value={asset.quantity ?? ''} onChange={e => updateEditRow(idx, 'quantity', e.target.value)}
-                            placeholder="Qty" min="0" step="any"
+                          <select
+                            value={asset.ticker ?? ''}
+                            onChange={e => updateEditRow(idx, 'ticker', e.target.value)}
+                            className="flex-1 text-xs px-2.5 py-1.5 rounded-lg outline-none text-white cursor-pointer"
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                          >
+                            <option value="" style={{ background: '#1a1a1a' }}>
+                              {asset.assetClass === AssetClass.STOCKS ? 'Select stock ticker' : 'Select crypto'}
+                            </option>
+                            {(asset.assetClass === AssetClass.STOCKS ? STOCK_TICKER_OPTIONS : CRYPTO_TICKER_OPTIONS).map(sym => (
+                              <option key={sym} value={sym} style={{ background: '#1a1a1a' }}>
+                                {sym}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            value={asset.quantity ?? ''}
+                            onChange={e => updateEditRow(idx, 'quantity', e.target.value)}
+                            placeholder="Qty"
+                            min="0"
+                            step="any"
                             className="w-20 px-2.5 py-1.5 text-xs rounded-lg outline-none text-white placeholder-white/20"
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }} />
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                          />
                         </div>
                       ) : (
                         <div className="relative">

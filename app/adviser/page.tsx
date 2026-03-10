@@ -7,6 +7,7 @@ import { useAuth } from '@/components/layout/AuthContext'
 import { supabase } from '@/lib/supabase'
 import ClientTable from '@/components/adviser/ClientTable'
 import SummaryStats from '@/components/adviser/SummaryStats'
+import { useFeaturePanel } from '@/components/layout/FeaturePanelContext'
 import { Role, RiskProfile, AssetClass } from '@/types'
 import type { Client, Asset } from '@/types'
 
@@ -17,6 +18,7 @@ export default function AdviserPage() {
   const [clientsLoading, setClientsLoading] = useState(true)
   const [clientsError, setClientsError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
+  const { privacyMode } = useFeaturePanel()
 
   useEffect(() => {
     if (isLoading || isLoggingOut) return
@@ -210,7 +212,7 @@ export default function AdviserPage() {
         ) : (
           <>
             <div className="mb-6">
-              <SummaryStats clients={clients} />
+              <SummaryStats clients={clients} privacyMode={privacyMode} />
             </div>
 
             <div
@@ -228,7 +230,7 @@ export default function AdviserPage() {
                   </p>
                 </div>
               </div>
-              <ClientTable clients={clients} />
+              <ClientTable clients={clients} privacyMode={privacyMode} />
             </div>
           </>
         )}

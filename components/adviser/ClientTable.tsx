@@ -10,6 +10,7 @@ import AnimatedCounter from '@/components/ui/AnimatedCounter'
 
 interface ClientTableProps {
   clients: Client[]
+  privacyMode?: boolean
 }
 
 const RISK_LABEL: Record<RiskProfile, string> = {
@@ -57,7 +58,7 @@ function MiniScoreGauge({ score }: { score: number }) {
   )
 }
 
-export default function ClientTable({ clients }: ClientTableProps) {
+export default function ClientTable({ clients, privacyMode = false }: ClientTableProps) {
   const router = useRouter()
 
   if (clients.length === 0) {
@@ -145,7 +146,7 @@ export default function ClientTable({ clients }: ClientTableProps) {
                 {/* AUM */}
                 <td className="py-3.5 px-4">
                   <span className="text-sm font-semibold tabular-nums" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                    {formatCurrency(client.portfolio.totalValue)}
+                    {privacyMode ? '••••' : formatCurrency(client.portfolio.totalValue)}
                   </span>
                 </td>
 

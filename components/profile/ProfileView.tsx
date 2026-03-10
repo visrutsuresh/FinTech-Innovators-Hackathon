@@ -1,16 +1,21 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
-import { Role, AssetClass } from '@/types'
+import { Role, AssetClass, RiskProfile } from '@/types'
 import type { Portfolio, Asset } from '@/types'
 import { supabase } from '@/lib/supabase'
 import WealthWallet from '@/components/WealthWallet'
 import { getArchetype } from '@/lib/archetypes'
 import DirectMessages from '@/components/DirectMessages'
 import { GlowingEffect } from '@/components/ui/glowing-effect'
+import shieldIcon from '@/shield.webp'
+import knightIcon from '@/knight.webp'
+import wizardIcon from '@/wizard.webp'
+import { useFeaturePanel } from '@/components/layout/FeaturePanelContext'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -43,6 +48,12 @@ interface NokNomination {
 
 const GOLD = '#C9A227'
 const EMERALD = '#10B981'
+
+const ARCHETYPE_ICON: Record<RiskProfile, typeof shieldIcon> = {
+  [RiskProfile.CONSERVATIVE]: shieldIcon,
+  [RiskProfile.MODERATE]: knightIcon,
+  [RiskProfile.AGGRESSIVE]: wizardIcon,
+}
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -139,6 +150,7 @@ function SearchBox({
 export default function ProfileView() {
   const { user, isLoading, isLoggingOut } = useAuth()
   const router = useRouter()
+  const { privacyMode } = useFeaturePanel()
 
   // ── State ────────────────────────────────────────────────────────────────────
   const [dataLoading, setDataLoading] = useState(true)
@@ -482,7 +494,22 @@ export default function ProfileView() {
                 {user.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>{user.name}</h1>
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                  <span className="inline-flex items-center gap-2">
+                    <span>{user.name}</span>
+                    {!isAdviser && ARCHETYPE_ICON[riskProfile as RiskProfile] && (
+                      <div className="h-7 w-7 rounded-full bg-black/70 flex items-center justify-center">
+                        <Image
+                          src={ARCHETYPE_ICON[riskProfile as RiskProfile]}
+                          alt={getArchetype(riskProfile)}
+                          className="h-5 w-5 object-contain"
+                          width={20}
+                          height={20}
+                        />
+                      </div>
+                    )}
+                  </span>
+                </h1>
                 <p className="text-base" style={{ color: 'var(--text-muted)' }}>{user.email}</p>
                 {username && (
                   <p className="text-sm font-mono mt-1" style={{ color: `${GOLD}80` }}>@{username}</p>
@@ -559,8 +586,19 @@ export default function ProfileView() {
                             </div>
                             <div className="flex items-center gap-2">
                               {c.risk_profile && (
-                                <span className="text-xs" style={{ color: GOLD }}>
-                                  {getArchetype(c.risk_profile)}
+                                <span className="inline-flex items-center gap-1">
+                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-black/70">
+                                    <Image
+                                      src={ARCHETYPE_ICON[c.risk_profile as RiskProfile] ?? shieldIcon}
+                                      alt={getArchetype(c.risk_profile)}
+                                      className="h-4 w-4 object-contain rounded-full border border-white/10"
+                                      width={16}
+                                      height={16}
+                                    />
+                                  </span>
+                                  <span className="text-xs" style={{ color: GOLD }}>
+                                    {getArchetype(c.risk_profile)}
+                                  </span>
                                 </span>
                               )}
                               <div className="relative rounded-lg">
@@ -1126,7 +1164,7 @@ export default function ProfileView() {
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-5">
-                <WealthWallet portfolio={nokPortfolio.portfolio} />
+                <WealthWallet portfolio={nokPortfolio.portfolio} privacyMode={privacyMode} />
               </div>
             </motion.div>
           </>
