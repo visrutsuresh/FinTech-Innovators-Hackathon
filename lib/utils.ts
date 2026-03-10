@@ -25,11 +25,9 @@ export function formatPercent(value: number, decimals = 1): string {
 }
 
 export function getScoreColor(score: number): string {
-  if (score >= 85) return '#10B981' // emerald
-  if (score >= 70) return '#34D399'
-  if (score >= 50) return '#C9A227' // gold
-  if (score >= 30) return '#F97316' // orange
-  return '#EF4444' // red
+  if (score >= 70) return '#2D6A4F' // green
+  if (score >= 40) return '#FAA307' // amber
+  return '#C1121F'                  // red
 }
 
 export function getScoreLabel(score: number): string {

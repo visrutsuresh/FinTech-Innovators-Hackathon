@@ -3,16 +3,16 @@
 import { motion } from 'framer-motion'
 import ScoreGauge from '@/components/ui/ScoreGauge'
 import type { WellnessScore } from '@/types'
-import { getScoreColor, getScoreLabel } from '@/lib/utils'
+import { getScoreColor } from '@/lib/utils'
 
 interface WellnessScorecardProps {
   score: WellnessScore
 }
 
 const subScores = [
-  { key: 'diversification' as const, label: 'Diversification', abbr: 'DIV' },
-  { key: 'liquidity' as const, label: 'Liquidity', abbr: 'LIQ' },
-  { key: 'behavioral' as const, label: 'Behavioural', abbr: 'BEH' },
+  { key: 'diversification' as const, label: 'Diversification', weight: '40%' },
+  { key: 'liquidity' as const, label: 'Liquidity', weight: '35%' },
+  { key: 'behavioral' as const, label: 'Behavioural', weight: '25%' },
 ]
 
 export default function WellnessScorecard({ score }: WellnessScorecardProps) {
@@ -22,17 +22,17 @@ export default function WellnessScorecard({ score }: WellnessScorecardProps) {
     <div className="space-y-5">
       {/* Main gauge */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.92 }}
+        initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         className="flex flex-col items-center pt-2"
       >
-        <ScoreGauge score={score.overall} size={180} strokeWidth={14} showScore label={score.label} />
-        <div className="text-center mt-2">
-          <p className="text-base font-bold" style={{ color: overallColor }}>
+        <ScoreGauge score={score.overall} size={190} strokeWidth={14} showScore />
+        <div className="text-center mt-3">
+          <p className="text-sm font-bold" style={{ color: overallColor }}>
             {score.label}
           </p>
-          <p className="text-xs text-white/35 mt-0.5">Overall wellness score</p>
+          <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Overall wellness score</p>
         </div>
       </motion.div>
 
@@ -40,7 +40,7 @@ export default function WellnessScorecard({ score }: WellnessScorecardProps) {
       <div style={{ height: 1, background: 'rgba(255,255,255,0.05)' }} />
 
       {/* Sub-score rows */}
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {subScores.map((sub, i) => {
           const val = score[sub.key]
           const color = getScoreColor(val)
@@ -49,21 +49,24 @@ export default function WellnessScorecard({ score }: WellnessScorecardProps) {
               key={sub.key}
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 + i * 0.08 }}
+              transition={{ delay: 0.25 + i * 0.09, ease: 'easeOut' }}
             >
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs text-white/55">{sub.label}</span>
-                <span className="text-xs font-semibold tabular-nums" style={{ color }}>
-                  {val}<span className="text-white/25 font-normal">/100</span>
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>{sub.label}</span>
+                  <span className="text-[10px] ml-1.5" style={{ color: 'rgba(255,255,255,0.22)' }}>{sub.weight}</span>
+                </div>
+                <span className="text-xs font-bold tabular-nums" style={{ color }}>
+                  {val}<span className="text-[10px] font-normal" style={{ color: 'rgba(255,255,255,0.22)' }}>/100</span>
                 </span>
               </div>
-              <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                 <motion.div
                   className="h-full rounded-full"
-                  style={{ background: color }}
+                  style={{ background: `linear-gradient(90deg, ${color}cc, ${color})` }}
                   initial={{ width: 0 }}
                   animate={{ width: `${val}%` }}
-                  transition={{ duration: 0.8, delay: 0.3 + i * 0.08, ease: 'easeOut' }}
+                  transition={{ duration: 0.9, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] }}
                 />
               </div>
             </motion.div>
@@ -71,12 +74,16 @@ export default function WellnessScorecard({ score }: WellnessScorecardProps) {
         })}
       </div>
 
-      {/* Score context pill */}
+      {/* Score context */}
       <div
-        className="rounded-xl p-3 text-xs text-white/40 leading-relaxed"
-        style={{ background: `${overallColor}08`, border: `1px solid ${overallColor}18` }}
+        className="rounded-xl px-3.5 py-2.5 text-xs leading-relaxed"
+        style={{
+          background: `${overallColor}07`,
+          border: `1px solid ${overallColor}15`,
+          color: 'rgba(255,255,255,0.35)',
+        }}
       >
-        Score is weighted: 40% diversification · 35% liquidity · 25% behavioural alignment
+        Weighted: 40% diversification · 35% liquidity · 25% behavioural alignment
       </div>
     </div>
   )
