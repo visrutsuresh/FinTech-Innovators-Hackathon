@@ -62,8 +62,8 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <p
-      className="text-[11px] font-semibold uppercase tracking-widest mb-4"
-      style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '0.09em' }}
+      className="text-base font-bold uppercase mb-4 underline underline-offset-4"
+      style={{ color: 'var(--text-caption)', letterSpacing: '0.18em' }}
     >
       {children}
     </p>
@@ -341,7 +341,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
               <h1 className="text-xl font-bold text-white tracking-tight" style={{ letterSpacing: '-0.02em' }}>
                 {client.name}
               </h1>
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{client.email}</p>
+              <p className="text-xs" style={{ color: 'var(--text-caption)' }}>{client.email}</p>
             </div>
             <span
               className="text-xs font-semibold px-3 py-1 rounded-full"
@@ -386,16 +386,16 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
             )}
 
             <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.22)' }}>
+              <span className="text-xs" style={{ color: 'var(--text-caption)' }}>
                 {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
               <button
                 onClick={handleManualRefresh} disabled={refreshing}
                 title="Fetch latest prices now"
                 className="relative transition-colors disabled:opacity-40 rounded-md p-0.5"
-                style={{ color: 'rgba(255,255,255,0.28)' }}
+                style={{ color: 'var(--text-caption)' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#DFD0B8')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.28)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-caption)')}
               >
                 <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
                 <svg

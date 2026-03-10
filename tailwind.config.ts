@@ -10,6 +10,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-muted': 'var(--text-muted)',
+        'text-caption': 'var(--text-caption)',
         cream: {
           DEFAULT: '#DFD0B8',
           dim:     'rgba(223,208,184,0.12)',

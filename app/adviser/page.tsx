@@ -134,7 +134,7 @@ export default function AdviserPage() {
         >
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest mb-1.5"
-              style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em' }}>
+              style={{ color: 'var(--text-caption)', letterSpacing: '0.1em' }}>
               Adviser Dashboard
             </p>
             <h1 className="text-2xl font-bold text-white tracking-tight" style={{ letterSpacing: '-0.02em' }}>

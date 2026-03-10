@@ -163,7 +163,7 @@ function FloatNode({
             />
           )}
         </AnimatePresence>
-        <span className="text-[10px] font-bold" style={{ color: C.light }}>
+        <span className="text-[13px] font-bold" style={{ color: C.light }}>
           {node.label.slice(0, 2)}
         </span>
       </motion.div>
@@ -188,11 +188,11 @@ function FloatNode({
         <motion.p
           animate={{ color: hovered ? C.light : C.lightA(0.5) }}
           transition={{ duration: 0.2 }}
-          className="text-[11px] font-semibold leading-tight"
+          className="text-[14px] font-semibold leading-tight"
         >
           {side === 'right' ? `${node.label} ·` : `· ${node.label}`}
         </motion.p>
-        <p className="text-[10px] tabular-nums leading-tight" style={{ color: C.midA(0.5) }}>
+        <p className="text-[13px] tabular-nums leading-tight" style={{ color: C.midA(0.5) }}>
           {node.value}
         </p>
       </div>
@@ -256,7 +256,7 @@ function PillarCard({ p, i }: { p: typeof pillars[0] & { accentBright?: string }
       </motion.div>
 
       <div
-        className="text-[9px] font-semibold uppercase tracking-[0.16em] mb-3 inline-block px-2.5 py-1 rounded-full relative z-10"
+        className="text-[13px] font-semibold uppercase tracking-[0.16em] mb-3 inline-block px-2.5 py-1 rounded-full relative z-10"
         style={{
           background: C.deepA(0.8),
           color: accent,
@@ -266,12 +266,12 @@ function PillarCard({ p, i }: { p: typeof pillars[0] & { accentBright?: string }
         {p.label}
       </div>
       <h3
-        className="text-sm font-bold mb-2 relative z-10"
+        className="text-[17px] font-bold mb-2 relative z-10"
         style={{ color: C.white, letterSpacing: '-0.01em' }}
       >
         {p.title}
       </h3>
-      <p className="text-sm leading-relaxed relative z-10" style={{ color: C.midA(0.65) }}>
+      <p className="text-[17px] leading-relaxed relative z-10" style={{ color: C.midA(0.65) }}>
         {p.body}
       </p>
     </motion.div>
@@ -306,12 +306,13 @@ function TrailBorderButton({
       style={{
         isolation: 'isolate',
         background: isDark ? C.deepA(0.95) : C.light,
-        color: isDark ? C.lightA(0.8) : C.bg,
+        // Darken text on the light (cream) variant for better contrast
+        color: isDark ? C.lightA(0.8) : '#050505',
         textDecoration: 'none',
         pointerEvents: animDone ? 'auto' : 'none',
         border: `1px solid ${isDark ? C.midA(0.25) : C.midA(0.2)}`,
       } as React.CSSProperties}
-      className="relative z-[3] overflow-hidden text-base font-semibold px-10 py-4 rounded-full inline-flex items-center justify-center whitespace-nowrap"
+      className="relative z-[3] overflow-hidden text-[19px] font-semibold px-10 py-4 rounded-full inline-flex items-center justify-center whitespace-nowrap"
     >
 
       {/* Star dots for dark variant */}
@@ -443,11 +444,9 @@ export default function LandingPage() {
   const smoothY = useSpring(cursorY, { stiffness: 60, damping: 20 })
 
   useEffect(() => {
+    // Only control mount animation here; allow logged-in users to stay on the landing page
     setMounted(true)
-    if (user) {
-      router.replace(user.role === 'adviser' ? '/adviser' : `/client/${user.id}`)
-    }
-  }, [user, router])
+  }, [])
 
 
   const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -573,7 +572,7 @@ export default function LandingPage() {
                 }}
               >
                 <span style={{ color: C.white, display: 'block' }}>Wealth wellness</span>
-                <span style={{ color: C.lightA(0.45), display: 'block' }}>for every asset you own.</span>
+                <span style={{ color: C.lightA(0.45), display: 'block', marginTop: '20px' }}>for every asset you own.</span>
                 <span
                   style={{
                     display: 'block',
@@ -607,7 +606,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={mounted ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.56, duration: 0.55, ease: E }}
-              className="text-sm leading-relaxed mx-auto mb-9"
+              className="text-[17px] leading-relaxed mx-auto mb-9"
               style={{ color: C.midA(0.55) }}
             >
               Unified portfolio tracking, real‑time wellness scoring, and Claude‑powered AI recommendations.
@@ -712,7 +711,7 @@ export default function LandingPage() {
                 <AnimatedCounter value={m.value} decimals={m.decimals} duration={1200} />
                 {m.suffix}
               </motion.p>
-              <p className="text-xs tracking-wide" style={{ color: C.midA(0.45) }}>{m.label}</p>
+              <p className="text-[15px] tracking-wide" style={{ color: C.midA(0.45) }}>{m.label}</p>
             </motion.div>
           ))}
         </div>
@@ -746,7 +745,7 @@ export default function LandingPage() {
             className="mb-16 text-center"
           >
             <motion.p
-              className="text-[10px] font-semibold uppercase tracking-[0.22em] mb-4"
+              className="text-[13px] font-semibold uppercase tracking-[0.22em] mb-4"
               style={{ color: C.midA(0.45) }}
             >
               Core capabilities
@@ -767,7 +766,7 @@ export default function LandingPage() {
       ═══════════════════════════════════════════════════════════════════ */}
       <section className="relative px-6 py-28 overflow-hidden">
         {/* Animated ambient ring */}
-        <motion.div
+            <motion.div
           animate={{ scale: [1, 1.08, 1], opacity: [0.15, 0.25, 0.15] }}
           transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full"
@@ -777,7 +776,7 @@ export default function LandingPage() {
             border: `1px solid ${C.midA(0.12)}`,
           }}
         />
-        <motion.div
+            <motion.div
           animate={{ scale: [1, 1.05, 1], opacity: [0.1, 0.18, 0.1] }}
           transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut', delay: 1 }}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full"
@@ -789,7 +788,7 @@ export default function LandingPage() {
           }}
         />
 
-        <motion.div
+            <motion.div
           initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
           whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: true }}
@@ -801,7 +800,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1, duration: 0.4 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-7"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[15px] font-medium mb-7"
             style={{
               background: C.deepA(0.6),
               border: `1px solid ${C.midA(0.25)}`,
@@ -841,7 +840,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.25 }}
-            className="text-sm mb-10"
+            className="text-[17px] mb-10"
             style={{ color: C.midA(0.5) }}
           >
             Sign in with a demo account and explore the full platform in under a minute.

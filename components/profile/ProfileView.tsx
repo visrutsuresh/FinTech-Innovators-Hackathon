@@ -57,7 +57,10 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 mb-2.5">
+    <p
+      className="font-semibold uppercase mb-2.5"
+      style={{ fontSize: 11, letterSpacing: '0.22em', color: 'var(--text-caption)' }}
+    >
       {children}
     </p>
   )
@@ -479,10 +482,10 @@ export default function ProfileView() {
                 {user.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold text-white tracking-tight">{user.name}</h1>
-                <p className="text-sm text-white/40">{user.email}</p>
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>{user.name}</h1>
+                <p className="text-base" style={{ color: 'var(--text-muted)' }}>{user.email}</p>
                 {username && (
-                  <p className="text-xs font-mono mt-0.5" style={{ color: `${GOLD}80` }}>@{username}</p>
+                  <p className="text-sm font-mono mt-1" style={{ color: `${GOLD}80` }}>@{username}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -528,7 +531,9 @@ export default function ProfileView() {
                 /* ─── ADVISER: Client connections ─── */
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
                   <Card className="p-6">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-5">Client Connections</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] mb-5" style={{ color: 'var(--text-caption)' }}>
+                      Client Connections
+                    </p>
 
                     {/* Connected clients list */}
                     {connectedClients.length > 0 && (
@@ -546,15 +551,15 @@ export default function ProfileView() {
                             <div className="flex items-center gap-2.5">
                               <Avatar name={c.name} size={8} color={EMERALD} />
                               <div>
-                                <p className="text-xs font-medium text-white/80">{c.name}</p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{c.name}</p>
                                 {c.username
-                                  ? <p className="text-[10px] font-mono" style={{ color: `${EMERALD}70` }}>@{c.username}</p>
-                                  : <p className="text-[10px] text-white/25">{c.email}</p>}
+                                  ? <p className="text-xs font-mono" style={{ color: `${EMERALD}70` }}>@{c.username}</p>
+                                  : <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{c.email}</p>}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
                               {c.risk_profile && (
-                                <span className="text-[10px]" style={{ color: GOLD }}>
+                                <span className="text-xs" style={{ color: GOLD }}>
                                   {getArchetype(c.risk_profile)}
                                 </span>
                               )}
@@ -562,8 +567,8 @@ export default function ProfileView() {
                                 <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
                                 <button
                                   onClick={() => router.push(`/client/${c.id}`)}
-                                  className="relative text-[10px] px-2.5 py-1 rounded-lg transition-colors text-white/40 hover:text-white/80"
-                                  style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+                                  className="relative text-xs px-3 py-1 rounded-lg transition-colors hover:text-white"
+                                  style={{ border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}
                                 >
                                   View
                                 </button>
@@ -588,9 +593,9 @@ export default function ProfileView() {
                               <div className="flex items-center gap-2.5">
                                 <Avatar name={req.profile?.name ?? '?'} size={7} color={GOLD} />
                                 <div>
-                                  <p className="text-xs text-white/70">{req.profile?.name ?? req.client_id}</p>
+                                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{req.profile?.name ?? req.client_id}</p>
                                   {req.profile?.username && (
-                                    <p className="text-[10px] font-mono" style={{ color: `${GOLD}60` }}>@{req.profile.username}</p>
+                                    <p className="text-xs font-mono" style={{ color: `${GOLD}60` }}>@{req.profile.username}</p>
                                   )}
                                 </div>
                               </div>
@@ -629,13 +634,13 @@ export default function ProfileView() {
                                   style={{ borderBottom: i < adviserResults.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}
                                 >
                                   <div>
-                                    <p className="text-xs font-medium text-white/80">{r.name}</p>
-                                    <p className="text-[10px] font-mono text-white/35">@{r.username}</p>
+                                    <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{r.name}</p>
+                                    <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>@{r.username}</p>
                                   </div>
                                   {connected ? (
-                                    <span className="text-[10px] text-white/30">Connected</span>
+                                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Connected</span>
                                   ) : requested ? (
-                                    <span className="text-[10px]" style={{ color: GOLD }}>Requested</span>
+                                    <span className="text-xs" style={{ color: GOLD }}>Requested</span>
                                   ) : (
                                     <div className="relative rounded-lg">
                                       <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
@@ -659,7 +664,8 @@ export default function ProfileView() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="text-[10px] text-white/25 mt-2 px-1"
+                            className="text-xs mt-2 px-1"
+                            style={{ color: 'var(--text-muted)' }}
                           >
                             No clients found with that username.
                           </motion.p>
@@ -675,7 +681,9 @@ export default function ProfileView() {
                   {/* My Adviser */}
                   <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
                     <Card className="p-6">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">My Adviser</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] mb-4" style={{ color: 'var(--text-caption)' }}>
+                        My Adviser
+                      </p>
                       {myAdviser ? (
                         <div
                           className="flex items-center gap-3 px-3.5 py-3 rounded-xl"
@@ -683,15 +691,15 @@ export default function ProfileView() {
                         >
                           <Avatar name={myAdviser.name} size={10} color={GOLD} />
                           <div>
-                            <p className="text-sm font-semibold text-white/90">{myAdviser.name}</p>
+                            <p className="text-base font-semibold" style={{ color: 'var(--text-secondary)' }}>{myAdviser.name}</p>
                             {myAdviser.username && (
-                              <p className="text-[10px] font-mono mt-0.5" style={{ color: `${GOLD}70` }}>@{myAdviser.username}</p>
+                              <p className="text-sm font-mono mt-0.5" style={{ color: `${GOLD}70` }}>@{myAdviser.username}</p>
                             )}
-                            <p className="text-[10px] text-white/30">{myAdviser.email}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{myAdviser.email}</p>
                           </div>
                         </div>
-                      ) : (
-                        <p className="text-xs text-white/25 leading-relaxed">
+                        ) : (
+                        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                           No adviser linked yet. Ask your adviser to search for your username and send a connection request.
                         </p>
                       )}
@@ -701,7 +709,9 @@ export default function ProfileView() {
                   {/* Next of Kin Nomination */}
                   <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     <Card className="p-6">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-5">Next of Kin Nomination</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] mb-5" style={{ color: 'var(--text-caption)' }}>
+                        Next of Kin Nomination
+                      </p>
 
                       {/* Current NOK */}
                       {myNok && (
@@ -721,10 +731,12 @@ export default function ProfileView() {
                                 color={myNok.status === 'accepted' ? EMERALD : GOLD}
                               />
                               <div>
-                                <p className="text-sm font-medium text-white/85">{myNok.profile?.name ?? myNok.nominee_id}</p>
+                                <p className="text-base font-medium" style={{ color: 'var(--text-secondary)' }}>
+                                  {myNok.profile?.name ?? myNok.nominee_id}
+                                </p>
                                 {myNok.profile?.username && (
                                   <p
-                                    className="text-[10px] font-mono"
+                                    className="text-sm font-mono"
                                     style={{ color: myNok.status === 'accepted' ? `${EMERALD}70` : `${GOLD}60` }}
                                   >
                                     @{myNok.profile.username}
@@ -748,7 +760,7 @@ export default function ProfileView() {
                             </div>
                           </div>
                           {myNok.status === 'pending' && (
-                            <p className="text-[10px] text-white/25 mt-1.5 px-1">
+                            <p className="text-xs mt-1.5 px-1" style={{ color: 'var(--text-muted)' }}>
                               Waiting for them to accept. They will be able to view your assets once accepted.
                             </p>
                           )}
@@ -782,11 +794,11 @@ export default function ProfileView() {
                                     style={{ borderBottom: i < nokResults.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}
                                   >
                                     <div>
-                                      <p className="text-xs font-medium text-white/80">{r.name}</p>
-                                      <p className="text-[10px] font-mono text-white/35">
+                                      <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{r.name}</p>
+                                      <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
                                         @{r.username}
                                         {r.role && (
-                                          <span className="ml-1.5 not-italic" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                                          <span className="ml-1.5 not-italic" style={{ color: 'var(--text-caption)' }}>
                                             · {r.role}
                                           </span>
                                         )}
@@ -823,7 +835,7 @@ export default function ProfileView() {
                             </motion.p>
                           )}
                         </AnimatePresence>
-                        <p className="text-[10px] text-white/20 mt-3 leading-relaxed">
+                        <p className="text-xs mt-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                           Your next of kin will be able to view your portfolio after accepting. You can change or revoke this at any time. They cannot see your identity unless they already know you.
                         </p>
                       </div>
@@ -845,7 +857,7 @@ export default function ProfileView() {
                   <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Incoming Requests</p>
                   {totalIncoming > 0 && (
                     <span
-                      className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
+                      className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
                       style={{ background: GOLD, color: '#080808' }}
                     >
                       {totalIncoming}
@@ -932,7 +944,7 @@ export default function ProfileView() {
                                 {nom.profile?.username && (
                                   <p
                                     className="text-[10px] font-mono"
-                                    style={{ color: nom.status === 'accepted' ? `${EMERALD}60` : 'rgba(255,255,255,0.25)' }}
+                                    style={{ color: nom.status === 'accepted' ? `${EMERALD}60` : 'var(--text-caption)' }}
                                   >
                                     @{nom.profile.username}
                                   </p>

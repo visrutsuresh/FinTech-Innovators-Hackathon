@@ -142,12 +142,12 @@ export default function LegacyReadiness({ clientId, isAdviser = false }: Props) 
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-base font-bold leading-none" style={{ color: scoreColor }}>{score}</span>
-            <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.3)' }}>/{ITEMS.length}</span>
+            <span className="text-[10px]" style={{ color: 'var(--text-caption)' }}>/{ITEMS.length}</span>
           </div>
         </div>
         <div>
           <p className="text-sm font-bold" style={{ color: scoreColor }}>{scoreLabel}</p>
-          <p className="text-xs mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          <p className="text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-caption)' }}>
             {isAdviser
               ? 'Client-managed checklist'
               : score === ITEMS.length
@@ -213,7 +213,7 @@ export default function LegacyReadiness({ clientId, isAdviser = false }: Props) 
                 <p className="text-xs font-medium transition-colors" style={{ color: done ? '#10B981' : 'rgba(255,255,255,0.78)' }}>
                   {item.label}
                 </p>
-                <p className="text-[10px] mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                <p className="text-[10px] mt-0.5 leading-snug" style={{ color: 'var(--text-caption)' }}>
                   {item.description}
                 </p>
               </div>

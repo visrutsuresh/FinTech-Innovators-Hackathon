@@ -75,7 +75,7 @@ export function ExpandableTabs({
   return (
     <div
       ref={ref}
-      className={cn("flex items-center gap-0.5 rounded-xl p-1", className)}
+      className={cn("relative flex items-center gap-0.5 rounded-xl p-1", className)}
       style={{
         background: "rgba(26,30,36,0.5)",
         border: "1px solid rgba(223,208,184,0.12)",

@@ -54,10 +54,10 @@ export default function WellnessScorecard({ score }: WellnessScorecardProps) {
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>{sub.label}</span>
-                  <span className="text-[10px] ml-1.5" style={{ color: 'rgba(255,255,255,0.22)' }}>{sub.weight}</span>
+                  <span className="text-[10px] ml-1.5" style={{ color: 'var(--text-caption)' }}>{sub.weight}</span>
                 </div>
                 <span className="text-xs font-bold tabular-nums" style={{ color }}>
-                  {val}<span className="text-[10px] font-normal" style={{ color: 'rgba(255,255,255,0.22)' }}>/100</span>
+                  {val}<span className="text-[10px] font-normal" style={{ color: 'var(--text-caption)' }}>/100</span>
                 </span>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
@@ -80,7 +80,7 @@ export default function WellnessScorecard({ score }: WellnessScorecardProps) {
         style={{
           background: `${overallColor}07`,
           border: `1px solid ${overallColor}15`,
-          color: 'rgba(255,255,255,0.35)',
+          color: 'var(--text-caption)',
         }}
       >
         Weighted: 40% diversification · 35% liquidity · 25% behavioural alignment

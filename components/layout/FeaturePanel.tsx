@@ -69,7 +69,7 @@ export default function FeaturePanel() {
               </div>
               <div>
                 <p className="text-xs font-semibold text-white">{PANEL_META[activePanel].title}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-caption)' }}>
                   {PANEL_META[activePanel].subtitle}
                 </p>
               </div>

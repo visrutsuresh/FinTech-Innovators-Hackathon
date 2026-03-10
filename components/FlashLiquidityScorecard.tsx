@@ -102,8 +102,8 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
             </div>
             <p className="text-[10px] font-bold mb-0.5" style={{ color: item.color }}>{item.label}</p>
             <p className="text-xs font-bold text-white tabular-nums">{formatCurrencyCompact(item.value)}</p>
-            <p className="text-[9px] mt-1 leading-tight" style={{ color: 'rgba(255,255,255,0.25)' }}>{item.sublabel}</p>
-            <p className="text-[9px] leading-tight" style={{ color: 'rgba(255,255,255,0.2)' }}>{item.desc}</p>
+            <p className="text-[10px] mt-1 leading-tight" style={{ color: 'var(--text-caption)' }}>{item.sublabel}</p>
+            <p className="text-[10px] leading-tight" style={{ color: 'var(--text-caption)' }}>{item.desc}</p>
           </motion.div>
         ))}
       </div>
@@ -114,13 +114,13 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
           <BarChart data={chartData} barCategoryGap="35%" margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
             <XAxis
               dataKey="label"
-              tick={{ fill: 'rgba(255,255,255,0.28)', fontSize: 10 }}
+              tick={{ fill: 'rgba(255,255,255,0.58)', fontSize: 11 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               tickFormatter={v => formatCurrencyCompact(Number(v))}
-              tick={{ fill: 'rgba(255,255,255,0.22)', fontSize: 9 }}
+              tick={{ fill: 'rgba(255,255,255,0.55)', fontSize: 10 }}
               axisLine={false}
               tickLine={false}
               width={50}
@@ -152,7 +152,7 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
       {/* Stress test */}
       <div>
         <p className="text-xs font-semibold text-white/60 mb-1">Liquidity stress test</p>
-        <p className="text-[11px] mb-3" style={{ color: 'rgba(255,255,255,0.28)' }}>
+        <p className="text-[11px] mb-3" style={{ color: 'var(--text-caption)' }}>
           How much cash do you need within 7 days?
         </p>
         <div className="flex gap-2">

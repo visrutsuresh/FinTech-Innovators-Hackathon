@@ -49,7 +49,7 @@ function MiniScoreGauge({ score }: { score: number }) {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[8px] font-bold tabular-nums" style={{ color }}>{score}</span>
+          <span className="text-[9px] font-bold tabular-nums" style={{ color }}>{score}</span>
         </div>
       </div>
       <span className="text-xs font-semibold tabular-nums" style={{ color }}>{score}</span>
@@ -86,7 +86,7 @@ export default function ClientTable({ clients }: ClientTableProps) {
               <th
                 key={h}
                 className="text-left py-3 px-6 text-[11px] font-semibold uppercase"
-                style={{ color: 'rgba(255,255,255,0.22)', letterSpacing: '0.07em' }}
+                style={{ color: 'var(--text-caption)', letterSpacing: '0.07em' }}
               >
                 {h}
               </th>
@@ -137,7 +137,7 @@ export default function ClientTable({ clients }: ClientTableProps) {
                       <p className="text-sm font-medium transition-colors" style={{ color: 'rgba(255,255,255,0.85)' }}>
                         {client.name}
                       </p>
-                      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>{client.email}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-caption)' }}>{client.email}</p>
                     </div>
                   </div>
                 </td>

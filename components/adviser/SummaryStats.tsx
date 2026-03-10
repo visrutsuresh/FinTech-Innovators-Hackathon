@@ -73,7 +73,7 @@ export default function SummaryStats({ clients }: SummaryStatsProps) {
       node: (
         <span className="text-2xl font-bold tabular-nums" style={{ color: getScoreColor(avgWellness) }}>
           <AnimatedCounter value={avgWellness} />
-          <span className="text-sm font-normal ml-1" style={{ color: 'rgba(255,255,255,0.25)' }}>/ 100</span>
+          <span className="text-sm font-normal ml-1" style={{ color: 'var(--text-caption)' }}>/ 100</span>
         </span>
       ),
       icon: <IconWellness />,
@@ -133,8 +133,8 @@ export default function SummaryStats({ clients }: SummaryStatsProps) {
             {stat.icon}
           </div>
           <div className="mb-1">{stat.node}</div>
-          <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>{stat.label}</p>
-          <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.18)' }}>{stat.sub}</p>
+          <p className="text-xs font-medium" style={{ color: 'var(--text-caption)' }}>{stat.label}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-caption)' }}>{stat.sub}</p>
         </motion.div>
       ))}
     </div>

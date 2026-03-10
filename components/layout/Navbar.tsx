@@ -38,6 +38,7 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+
   const handleLogout = async () => {
     await logout()
     router.push('/')
@@ -77,9 +78,9 @@ export default function Navbar() {
 
   // ── Tab definitions ──────────────────────────────────────────────────────────
 
-  // When a logged-in user visits the landing page — Dashboard shortcut + Profile only
+  // When a logged-in user visits the landing page — Home (dashboard shortcut) + Profile only
   const landingTabs: TabItem[] = useMemo(() => [
-    { title: 'Dashboard', icon: Home, onClick: () => router.push(dashboardUrl) },
+    { title: 'Home', icon: Home, onClick: () => router.push(dashboardUrl) },
     { title: 'Profile',   icon: User, onClick: handleProfileClick },
   ], [dashboardUrl, handleProfileClick, router])
 
@@ -166,7 +167,10 @@ export default function Navbar() {
       } as CSSProperties}
     >
       {/* ── Col 1: Logo ── */}
-      <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
+      <Link
+        href="/"
+        className="flex items-center gap-2.5 group flex-shrink-0"
+      >
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black transition-transform group-hover:scale-105"
           style={{ background: '#DFD0B8', color: '#0D0D0D' }}

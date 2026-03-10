@@ -128,7 +128,7 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
               <div className="flex items-start justify-between mb-2">
                 <span className="text-base">{s.icon}</span>
                 <span
-                  className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                  className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
                   style={{ background: `${sColor}15`, color: sColor }}
                 >
                   {s.severity}
@@ -189,7 +189,7 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
 
               {/* Per-class impacts */}
               <div className="space-y-1.5 pt-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <p className="text-[10px] font-semibold uppercase tracking-wider pt-2" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider pt-2" style={{ color: 'var(--text-caption)' }}>
                   Asset class impacts
                 </p>
                 {Object.entries(SCENARIOS[activeKey].impacts)
@@ -224,7 +224,7 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
       </AnimatePresence>
 
       {!activeKey && (
-        <p className="text-[10px] text-center pt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>
+        <p className="text-[10px] text-center pt-1" style={{ color: 'var(--text-caption)' }}>
           Select a scenario above to simulate the impact on your portfolio
         </p>
       )}

@@ -78,7 +78,7 @@ export default function ChatPanel() {
               </div>
               <div>
                 <p className="text-xs font-semibold text-white">AI Adviser</p>
-                <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                <p className="text-[10px]" style={{ color: 'var(--text-caption)' }}>
                   {isAdviserWithClient ? `Analysing portfolio` : '⌘L to toggle'}
                 </p>
               </div>
@@ -130,7 +130,7 @@ export default function ChatPanel() {
                   <p className="text-xs font-semibold text-white/60 mb-1.5">
                     {user ? 'Open a client portfolio to chat' : 'Sign in to use the AI adviser'}
                   </p>
-                  <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--text-caption)' }}>
                     {user
                       ? 'Navigate to a client dashboard and the AI will have full portfolio context.'
                       : 'The AI adviser analyses your portfolio and answers your financial questions.'}

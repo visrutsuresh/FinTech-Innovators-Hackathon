@@ -39,10 +39,11 @@
   --border-muted:  rgba(223, 208, 184, 0.05);
   --border-strong: rgba(223, 208, 184, 0.18);
 
-  /* Typography */
+  /* Typography — brighter for visibility */
   --text-primary:   #FFFFFF;
-  --text-secondary: rgba(223, 208, 184, 0.85);
-  --text-muted:     rgba(148, 137, 121, 0.75);
+  --text-secondary: rgba(235, 228, 218, 0.95);
+  --text-muted:     rgba(223, 208, 184, 0.82);
+  --text-caption:   rgba(255, 255, 255, 0.62); /* Labels, hints — was ~0.28 */
 
   /* Radius */
   --radius-card:   16px;
@@ -58,12 +59,24 @@
 }
 
 /* ── Base ────────────────────────────────────────────────────── */
+html {
+  font-size: 19px; /* Slight bump so all dashboard text is ~2–3px larger */
+}
+
 body {
   background: var(--background);
-  color: var(--foreground);
+  color: var(--text-secondary);
   font-family: var(--font-alte), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+/* Default body copy colour */
+p,
+li,
+span {
+  color: var(--text-secondary);
 }
 
 * {

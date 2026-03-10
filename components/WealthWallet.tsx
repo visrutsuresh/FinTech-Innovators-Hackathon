@@ -51,12 +51,12 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
       {/* Net worth */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.28)' }}>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em]" style={{ color: 'var(--text-caption)' }}>
             Total value
           </p>
           {privacyMode && (
             <span
-              className="text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider"
+              className="text-xs px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider"
               style={{ background: 'rgba(201,162,39,0.12)', color: '#C9A227' }}
             >
               Private
@@ -64,14 +64,14 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
           )}
         </div>
         <div
-          className="text-3xl font-black tabular-nums"
+          className="text-4xl font-black tabular-nums"
           style={{ color: '#C9A227', letterSpacing: '-0.03em' }}
         >
           {privacyMode ? '••••••' : (
             <>$<AnimatedCounter value={liveTotal} decimals={2} duration={1200} /></>
           )}
         </div>
-        <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.22)' }}>
+        <p className="text-sm mt-1.5" style={{ color: 'var(--text-caption)' }}>
           Updated {new Date(portfolio.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </p>
       </div>
@@ -82,7 +82,7 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
           <AssetDonut assets={portfolio.assets} totalValue={liveTotal} />
         </div>
 
-        <div className="flex-1 space-y-2.5 min-w-0">
+        <div className="flex-1 space-y-3 min-w-0">
           {sorted.map(([cls, value], i) => {
             const pct = liveTotal > 0 ? (value / liveTotal) * 100 : 0
             const color = CLASS_COLORS[cls] ?? '#666'
@@ -93,16 +93,16 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.58)' }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.75)' }}>
                     <span className="inline-block w-2 h-2 rounded-sm flex-shrink-0" style={{ background: color }} />
                     {CLASS_LABELS[cls] ?? cls}
                   </span>
-                  <span className="text-xs tabular-nums" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                  <span className="text-sm tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     {pct.toFixed(1)}%
                   </span>
                 </div>
-                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                   <motion.div
                     className="h-full rounded-full"
                     style={{ background: `linear-gradient(90deg, ${color}bb, ${color})` }}
@@ -122,10 +122,10 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
 
       {/* Individual positions */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(255,255,255,0.22)' }}>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] mb-3" style={{ color: 'var(--text-caption)' }}>
           Positions
         </p>
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {portfolio.assets.slice().sort((a, b) => b.value - a.value).map((asset, i) => {
             const color = CLASS_COLORS[asset.assetClass] ?? '#666'
             return (
@@ -142,7 +142,7 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
                     className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                     style={{ background: color }}
                   />
-                  <span className="text-xs truncate transition-colors" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                  <span className="text-sm truncate transition-colors" style={{ color: 'rgba(255,255,255,0.85)' }}>
                     {privacyMode
                       ? CLASS_LABELS[asset.assetClass] ?? asset.assetClass
                       : asset.quantity != null && asset.quantity > 0
@@ -150,12 +150,12 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
                         : asset.name}
                   </span>
                   {!privacyMode && (asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId) && asset.quantity == null && (
-                    <span className="text-[10px] flex-shrink-0" style={{ color: 'rgba(255,255,255,0.22)' }}>
+                    <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-caption)' }}>
                       {asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId}
                     </span>
                   )}
                 </div>
-                <span className="text-xs font-semibold flex-shrink-0 ml-3 tabular-nums" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                <span className="text-sm font-semibold flex-shrink-0 ml-3 tabular-nums" style={{ color: 'rgba(255,255,255,0.9)' }}>
                   {privacyMode ? '••••' : formatCurrency(asset.value)}
                 </span>
               </motion.div>

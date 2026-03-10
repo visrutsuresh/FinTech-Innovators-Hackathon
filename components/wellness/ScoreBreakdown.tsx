@@ -83,7 +83,7 @@ export default function ScoreBreakdown({ score }: ScoreBreakdownProps) {
                 </div>
                 <div>
                   <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>{item.label}</p>
-                  <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.22)' }}>Weight: {item.weight}</p>
+                  <p className="text-[10px]" style={{ color: 'var(--text-caption)' }}>Weight: {item.weight}</p>
                 </div>
               </div>
               <span className="text-xl font-bold tabular-nums" style={{ color }}>
@@ -103,7 +103,7 @@ export default function ScoreBreakdown({ score }: ScoreBreakdownProps) {
             </div>
 
             {/* Description */}
-            <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.32)' }}>{item.description}</p>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.description}</p>
           </motion.div>
         )
       })}

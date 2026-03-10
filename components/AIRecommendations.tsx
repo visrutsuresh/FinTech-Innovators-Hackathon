@@ -252,9 +252,9 @@ export default function AIRecommendations({
           <button
             onClick={clearChat}
             className="text-[10px] transition-colors"
-            style={{ color: 'rgba(255,255,255,0.2)' }}
+            style={{ color: 'var(--text-caption)' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-caption)')}
           >
             Clear chat
           </button>
@@ -282,7 +282,7 @@ export default function AIRecommendations({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
               </div>
-              <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.22)' }}>
+              <p className="text-xs text-center" style={{ color: 'var(--text-caption)' }}>
                 Ask anything about your portfolio
               </p>
             </motion.div>
@@ -346,13 +346,13 @@ export default function AIRecommendations({
                               <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                                 <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>{rec.title}</p>
                                 <span
-                                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
                                   style={{ background: `${pColor}18`, color: pColor }}
                                 >
                                   {rec.priority}
                                 </span>
                               </div>
-                              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>{rec.description}</p>
+                              <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{rec.description}</p>
                             </div>
                           </div>
                         </div>
@@ -361,7 +361,7 @@ export default function AIRecommendations({
                   })}
 
                   {msg.response?.marketContext && (
-                    <p className="text-xs italic px-1 leading-relaxed" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                    <p className="text-xs italic px-1 leading-relaxed" style={{ color: 'var(--text-caption)' }}>
                       {msg.response.marketContext}
                     </p>
                   )}
@@ -443,14 +443,14 @@ export default function AIRecommendations({
             <button
               onClick={() => setActiveTab('new')}
               className="relative w-full text-xs py-2 rounded-xl transition-all"
-              style={{ border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.28)' }}
+              style={{ border: '1px solid rgba(255,255,255,0.07)', color: 'var(--text-caption)' }}
               onMouseEnter={e => {
                 e.currentTarget.style.borderColor = 'rgba(223,208,184,0.25)'
                 e.currentTarget.style.color = '#DFD0B8'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
-                e.currentTarget.style.color = 'rgba(255,255,255,0.28)'
+                e.currentTarget.style.color = 'var(--text-caption)'
               }}
             >
               + Start new chat
