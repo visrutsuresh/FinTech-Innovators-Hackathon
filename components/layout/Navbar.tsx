@@ -75,30 +75,7 @@ export default function Navbar() {
       <div className="flex items-center gap-3">
         {user && !isLoading ? (
           <>
-            <div className="hidden sm:flex items-center gap-2">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'rgba(201,162,39,0.15)', color: '#C9A227' }}
-              >
-                {user.name.charAt(0)}
-              </div>
-              <span className="text-sm text-white/70">{user.name}</span>
-            </div>
-
-            <span
-              className="text-xs font-medium px-2.5 py-1 rounded-full"
-              style={{
-                background: user.role === Role.ADVISER
-                  ? 'rgba(201,162,39,0.1)'
-                  : 'rgba(16,185,129,0.1)',
-                color: user.role === Role.ADVISER ? '#C9A227' : '#10B981',
-                border: `1px solid ${user.role === Role.ADVISER ? 'rgba(201,162,39,0.2)' : 'rgba(16,185,129,0.2)'}`,
-              }}
-            >
-              {user.role === Role.ADVISER ? 'Adviser' : 'Client'}
-            </span>
-
-            {user.role === Role.ADVISER && (
+            {onProfile && user.role === Role.ADVISER && (
               <Link
                 href="/adviser"
                 className="text-xs text-white/50 hover:text-white/90 transition-colors hidden sm:block"
@@ -106,7 +83,7 @@ export default function Navbar() {
                 Dashboard
               </Link>
             )}
-            {user.role === Role.CLIENT && (
+            {onProfile && user.role === Role.CLIENT && (
               <Link
                 href={`/client/${user.id}`}
                 className="text-xs text-white/50 hover:text-white/90 transition-colors hidden sm:block"
