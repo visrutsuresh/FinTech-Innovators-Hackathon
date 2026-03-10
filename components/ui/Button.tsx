@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 import type { ReactNode, ButtonHTMLAttributes } from 'react'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -38,7 +39,7 @@ export default function Button({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       className={cn(
-        'rounded-lg font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
+        'relative rounded-lg font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
         sizeStyles[size],
         className
       )}
@@ -46,6 +47,7 @@ export default function Button({
       disabled={disabled || loading}
       {...(props as object)}
     >
+      <GlowingEffect spread={25} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
       {loading ? (
         <span className="flex items-center gap-2">
           <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
