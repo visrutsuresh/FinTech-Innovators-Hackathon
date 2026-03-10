@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { motion, animate, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion'
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/components/layout/AuthContext'
 import { mockClients } from '@/lib/mock-data'
 
@@ -80,7 +80,7 @@ const ASSET_CLASSES = ['Stocks', 'Crypto', 'Real Estate', 'Bonds', 'Cash', 'Priv
 
 // ── Magnetic button hook ──────────────────────────────────────────────────────
 function useMagnetic(strength = 0.3) {
-  const ref = useRef<HTMLAnchorElement>(null)
+  const ref = useRef<HTMLElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
   const sx = useSpring(x, { stiffness: 400, damping: 30 })
@@ -398,7 +398,7 @@ function AnimatedCTA({ mounted }: { mounted: boolean }) {
     >
       {/* Sign in — dark bg + light stars + border trail */}
       <motion.div
-        ref={mag1.ref}
+        ref={mag1.ref as React.RefObject<HTMLDivElement>}
         style={{ x: cx1, y: cy1 }}
         whileTap={animDone ? { scale: 0.97 } : {}}
       >
@@ -413,7 +413,7 @@ function AnimatedCTA({ mounted }: { mounted: boolean }) {
 
       {/* Get started — cream fill + border trail only */}
       <motion.div
-        ref={mag2.ref}
+        ref={mag2.ref as React.RefObject<HTMLDivElement>}
         style={{ x: cx2, y: cy2 }}
         whileHover={animDone ? { scale: 1.03 } : {}}
         whileTap={animDone ? { scale: 0.96 } : {}}
