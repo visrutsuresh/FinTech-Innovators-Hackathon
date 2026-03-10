@@ -115,6 +115,9 @@ function isValid(r: AssetRow) {
 export default function SignupPage() {
   const [step, setStep] = useState<'info' | 'questionnaire' | 'result' | 'assets'>('info')
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
+  const [usernameError, setUsernameError] = useState('')
+  const [usernameChecking, setUsernameChecking] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>(Role.CLIENT)
@@ -125,10 +128,28 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [signedUpUserId, setSignedUpUserId] = useState<string | null>(null)
-  useAuth()
+  const { login } = useAuth()
   const router = useRouter()
 
+  // Check username availability via the server-side API route (bypasses RLS for unauthed users)
+  const checkUsername = async (value: string): Promise<boolean> => {
+    const normalized = value.toLowerCase().trim()
+    if (!normalized) { setUsernameError('Profile name is required.'); return false }
+    setUsernameChecking(true)
+    setUsernameError('')
+    try {
+      const res = await fetch(`/api/check-username?username=${encodeURIComponent(normalized)}`)
+      const json: { available: boolean; error?: string } = await res.json()
+      if (json.error) { setUsernameError(json.error); return false }
+      if (!json.available) { setUsernameError('That profile name is already taken. Please choose another.'); return false }
+      return true
+    } finally {
+      setUsernameChecking(false)
+    }
+  }
+
   const validateInfo = (): string | null => {
+    if (!username.trim()) return 'Profile name is required.'
     if (password.length < 6) return 'Password should be at least 6 characters.'
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email.trim())) return 'Please enter a valid email address.'
@@ -139,17 +160,32 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
     const validationErr = validateInfo()
-    if (validationErr) {
-      setError(validationErr)
-      return
-    }
+    if (validationErr) { setError(validationErr); return }
+    // Re-check username availability right before creating the account
+    const usernameAvailable = await checkUsername(username)
+    if (!usernameAvailable) return
     if (role === Role.ADVISER) {
       setLoading(true)
       try {
         const { data, error: err } = await supabase.auth.signUp({ email, password })
         if (err) throw err
         if (!data.user) throw new Error('Signup failed')
-        await supabase.from('profiles').insert({ id: data.user.id, name, email, role: 'adviser' })
+        // Duplicate email: Supabase returns the existing user with empty identities
+        if (data.user.identities && data.user.identities.length === 0) {
+          setError('An account with this email already exists.')
+          setLoading(false)
+          return
+        }
+        const { error: profileErr } = await supabase
+          .from('profiles')
+          .insert({ id: data.user.id, name, email, role: 'adviser', username: username.toLowerCase().trim() })
+        if (profileErr) {
+          // Unique constraint violation — race condition where another user claimed the name
+          if (profileErr.code === '23505') throw new Error('That profile name was just taken. Please choose another.')
+          throw new Error(profileErr.message)
+        }
+        // Use login() so AuthContext.user is set before navigating
+        await login(email, password)
         router.push('/adviser')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Signup failed')
@@ -226,65 +262,63 @@ export default function SignupPage() {
   }
 
   const handleComplete = async (skip = false) => {
-    if (!profile) return
-    const validationErr = validateInfo()
-    if (validationErr) {
-      setError(validationErr)
-      return
-    }
-    if (!signedUpUserId) {
+    if (!profile || !signedUpUserId) {
       setError('Session expired. Please go back and try again.')
       return
     }
     setLoading(true); setError('')
     try {
       const userId = signedUpUserId
+      // Pre-generate portfolioId so we can parallelise the two inserts
+      const portfolioId = crypto.randomUUID()
 
-      await supabase.from('profiles').insert({
-        id: userId, name, email,
-        role: 'client',
-        risk_profile: profile.riskProfile,
-        investor_profile: profile.name,
-      })
+      // Build asset rows upfront so we know the total before any DB call
+      const assetInserts = skip || validRows.length === 0 ? [] : validRows.map(r => ({
+        portfolio_id: portfolioId,
+        name: r.name.trim(),
+        asset_class: r.assetClass,
+        value: PRICE_TRACKED.includes(r.assetClass) ? 0 : parseFloat(r.value ?? '0') || 0,
+        currency: 'USD',
+        quantity: PRICE_TRACKED.includes(r.assetClass) ? parseFloat(r.quantity) : null,
+        finage_symbol: r.assetClass === AssetClass.STOCKS && r.ticker ? r.ticker.toUpperCase() : null,
+        coin_gecko_id: r.assetClass === AssetClass.CRYPTO && r.ticker ? r.ticker.toLowerCase() : null,
+        is_crypto: r.assetClass === AssetClass.CRYPTO,
+      }))
+      const manualTotal = assetInserts.reduce((s, a) => s + a.value, 0)
 
-      const { data: portfolioData } = await supabase
-        .from('portfolios')
-        .insert({ client_id: userId, total_value: 0 })
-        .select().single()
+      // Round 1 (parallel): create profile + portfolio simultaneously
+      await Promise.all([
+        supabase.from('profiles').insert({
+          id: userId, name, email,
+          role: 'client',
+          risk_profile: profile.riskProfile,
+          investor_profile: profile.name,
+          username: username.toLowerCase().trim(),
+        }).then(({ error: profileErr }) => {
+          if (profileErr) {
+            if (profileErr.code === '23505') throw new Error('That profile name was just taken. Please choose another.')
+            throw new Error(profileErr.message)
+          }
+        }),
+        supabase.from('portfolios').insert({
+          id: portfolioId,
+          client_id: userId,
+          total_value: manualTotal,
+        }),
+      ])
 
-      if (portfolioData && !skip) {
-        const rows = validRows
-        if (rows.length > 0) {
-          // User entered assets — insert them
-          const inserts = rows.map(r => {
-            let value = 0
-            if (!PRICE_TRACKED.includes(r.assetClass)) {
-              value = parseFloat(r.value ?? '0') || 0
-            }
-            return {
-              portfolio_id: portfolioData.id,
-              name: r.name.trim(),
-              asset_class: r.assetClass,
-              value,
-              currency: 'USD',
-              quantity: PRICE_TRACKED.includes(r.assetClass) ? parseFloat(r.quantity) : null,
-              finage_symbol: r.assetClass === AssetClass.STOCKS && r.ticker ? r.ticker.toUpperCase() : null,
-              coin_gecko_id: r.assetClass === AssetClass.CRYPTO && r.ticker ? r.ticker.toLowerCase() : null,
-              is_crypto: r.assetClass === AssetClass.CRYPTO,
-            }
-          })
-
-          await supabase.from('assets').insert(inserts)
-          const totalValue = inserts.reduce((s, a) => s + a.value, 0)
-          await supabase.from('portfolios').update({ total_value: totalValue }).eq('id', portfolioData.id)
-        }
-      } else if (portfolioData && skip) {
-        // Skip: use pre-built template for instant populated dashboard
-        const totalValue = await copyTemplateToPortfolio(portfolioData.id, profile.riskProfile)
-        await supabase.from('portfolios').update({ total_value: totalValue }).eq('id', portfolioData.id)
+      // Round 2: insert assets (user-entered or template)
+      if (skip) {
+        // copyTemplateToPortfolio inserts the assets and returns the real total —
+        // update the portfolio row so total_value reflects the template data
+        const templateTotal = await copyTemplateToPortfolio(portfolioId, profile.riskProfile)
+        await supabase.from('portfolios').update({ total_value: templateTotal }).eq('id', portfolioId)
+      } else if (assetInserts.length > 0) {
+        await supabase.from('assets').insert(assetInserts)
       }
 
-      await supabase.auth.signInWithPassword({ email, password })
+      // login() signs in AND sets AuthContext.user — page.tsx fast path kicks in immediately
+      await login(email, password)
       router.push(`/client/${userId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -322,6 +356,51 @@ export default function SignupPage() {
                     <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Jane Doe"
                       className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none placeholder-white/20"
                       style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 mb-1.5">
+                      Profile name
+                      <span className="ml-1.5 text-white/20 font-normal normal-case tracking-normal">unique · used for nominations &amp; search</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-white/25 select-none">@</span>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={e => {
+                          setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))
+                          setUsernameError('')
+                        }}
+                        onBlur={() => { if (username.trim()) checkUsername(username) }}
+                        required
+                        placeholder="jane.doe"
+                        maxLength={20}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        className="w-full pl-7 pr-9 py-2.5 rounded-xl text-sm text-white outline-none placeholder-white/20"
+                        style={{
+                          background: 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${usernameError ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                        }}
+                      />
+                      {/* Availability indicator */}
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {usernameChecking && (
+                          <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5">
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                          </svg>
+                        )}
+                        {!usernameChecking && username.trim() && !usernameError && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        )}
+                      </span>
+                    </div>
+                    {usernameError && (
+                      <p className="text-xs text-red-400 mt-1.5 px-0.5">{usernameError}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-white/40 mb-1.5">Email</label>

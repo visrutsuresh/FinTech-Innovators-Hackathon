@@ -43,6 +43,7 @@ async function fetchUserProfile(supabaseId: string): Promise<User | null> {
       password: '',
       role: Role.ADVISER,
       clientIds: clientProfiles?.map((c: { id: string }) => c.id) ?? [],
+      username: profile.username ?? undefined,
     } as Adviser
   }
 
@@ -81,6 +82,7 @@ async function fetchUserProfile(supabaseId: string): Promise<User | null> {
     riskProfile: profile.risk_profile as RiskProfile,
     investorProfile: profile.investor_profile ?? undefined,
     adviserId: profile.adviser_id ?? undefined,
+    username: profile.username ?? undefined,
     portfolio: {
       assets: mappedAssets,
       totalValue: portfolio?.total_value != null

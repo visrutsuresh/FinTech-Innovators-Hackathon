@@ -37,6 +37,18 @@ export default function LoginPage() {
     }
   }
 
+  const handleQuickLogin = async (demoEmail: string) => {
+    setError('')
+    setLoading(true)
+    try {
+      const user = await login(demoEmail, 'demo123')
+      router.push(user.role === Role.ADVISER ? '/adviser' : `/client/${user.id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed.')
+      setLoading(false)
+    }
+  }
+
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-6 sm:py-10 sm:px-6"
@@ -117,7 +129,7 @@ export default function LoginPage() {
               <button
                 key={d.email}
                 type="button"
-                onClick={() => { setEmail(d.email); setPassword('demo123') }}
+                onClick={() => handleQuickLogin(d.email)}
                 className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-left transition-all"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(201,162,39,0.2)')}
