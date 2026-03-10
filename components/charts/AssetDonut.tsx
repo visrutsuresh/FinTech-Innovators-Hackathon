@@ -5,12 +5,12 @@ import type { Asset } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
 const CLASS_COLORS: Record<string, string> = {
-  stocks: '#6366F1',
-  crypto: '#C9A227',
-  cash: '#10B981',
-  bonds: '#8B5CF6',
-  real_estate: '#F97316',
-  private: '#EC4899',
+  stocks:      '#457B9D',   // steel blue
+  crypto:      '#FAA307',   // amber
+  cash:        '#2D6A4F',   // green
+  bonds:       '#DFD0B8',   // cream
+  real_estate: '#948979',   // taupe
+  private:     '#C1121F',   // red
 }
 
 const CLASS_LABELS: Record<string, string> = {

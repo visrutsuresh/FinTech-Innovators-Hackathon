@@ -5,12 +5,12 @@ import type { Asset } from '@/types'
 import { formatCurrencyCompact } from '@/lib/utils'
 
 const CLASS_COLORS: Record<string, string> = {
-  stocks: '#6366F1',
+  stocks: '#457B9D',
   crypto: '#C9A227',
   cash: '#10B981',
-  bonds: '#8B5CF6',
+  bonds: '#DFD0B8',
   real_estate: '#F97316',
-  private: '#EC4899',
+  private: '#C1121F',
 }
 
 interface AssetBarChartProps {
