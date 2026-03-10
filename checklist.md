@@ -7,7 +7,7 @@
 - [!] Blocked
 
 ## Current Summary
-- Completed: 4
+- Completed: 9
 - In progress: 0
 - Blocked: 0
 - Not started: 0
@@ -149,6 +149,53 @@ If this extraction is needed in more than one place, extract the price-merge log
 
 ---
 
+---
+
+### Task 5 — Liquidity Stress Test
+**Status:** [x] Completed
+**Expectation:** User enters a cash amount needed within 7 days. App distinguishes Tier 1 (instant: cash), Tier 2 (T+2: stocks, bonds, major crypto), Tier 3 (illiquid: real estate, private equity) and reports Pass/Fail with a shortfall if any.
+**Files changed:**
+- `components/LiquidityStressTest.tsx` — new component: input, tier breakdown, pass/fail result
+- `app/client/[id]/ClientView.tsx` — added to Row 3
+
+---
+
+### Task 6 — Black Swan Scenario Tester
+**Status:** [x] Completed
+**Expectation:** 4 historical/hypothetical crash scenarios (2008, COVID, Crypto Winter, Hyperinflation). Selecting one re-calculates portfolio value and wellness score based on per-asset-class impact multipliers.
+**Files changed:**
+- `components/BlackSwanTester.tsx` — new component: scenario buttons, impact display, simulated score
+- `app/client/[id]/ClientView.tsx` — added to Row 3
+
+---
+
+### Task 7 — Flash Liquidity Scorecard (T+0 / T+2 / T+30)
+**Status:** [x] Completed
+**Expectation:** Bar chart showing accessible wealth in 24 hrs (T+0), 2-3 days (T+2), and 30+ days (T+30), giving a granular operational view of liquidity beyond a single ratio.
+**Files changed:**
+- `components/FlashLiquidityScorecard.tsx` — new component: Recharts BarChart with 3 tiers
+- `app/client/[id]/ClientView.tsx` — added to Row 4
+
+---
+
+### Task 8 — Legacy & Inheritance Readiness
+**Status:** [x] Completed
+**Expectation:** Checklist widget covering Will Status, Nominees, Digital Vault, Insurance, and POA. Persisted in localStorage. Shows a "Legacy Score" (items complete / 5).
+**Files changed:**
+- `components/LegacyReadiness.tsx` — new component
+- `app/client/[id]/ClientView.tsx` — added to Row 4
+
+---
+
+### Task 9 — Privacy Mode (Adviser View)
+**Status:** [x] Completed
+**Expectation:** Adviser can toggle "Privacy Mode" when viewing a client's page to hide dollar amounts and specific asset names — showing only percentages and asset classes. Client sees no change.
+**Files changed:**
+- `components/WealthWallet.tsx` — accept `privacyMode` prop; mask values when on
+- `app/client/[id]/ClientView.tsx` — Privacy Mode toggle shown only to adviser role
+
+---
+
 ## Implementation Log
 - 2026-03-10: Checklist created. Repository analyzed.
 - 2026-03-10: `types/index.ts` — added `investorProfile?: string` to Client.
@@ -160,3 +207,10 @@ If this extraction is needed in more than one place, extract the price-merge log
 - 2026-03-10: Global AI chat panel added — `ChatPanel.tsx`, `ChatPanelContext.tsx`, `MainLayout.tsx`. Navbar sparkles icon, `⌘L` shortcut.
 - 2026-03-10: AI chatbot upgraded — Supabase `chat_messages` table, multi-turn Claude system prompt, dual response mode (chat vs recommendations). Old Tasks 3 & 4 amalgamated.
 - 2026-03-10: `npm run build` — PASSED with 0 errors. All 10 pages compiled successfully.
+- 2026-03-10: Tasks 5–9 implemented — `npm run build` PASSED (11 pages).
+  - `components/LiquidityStressTest.tsx` — Tier 1/2/3 breakdown + pass/fail stress test
+  - `components/BlackSwanTester.tsx` — 4 crash scenarios with live score simulation
+  - `components/FlashLiquidityScorecard.tsx` — T+0 / T+2 / T+30 Recharts BarChart
+  - `components/LegacyReadiness.tsx` — 5-item checklist, localStorage-persisted, arc score
+  - `components/WealthWallet.tsx` — `privacyMode` prop masks amounts + asset names
+  - `app/client/[id]/ClientView.tsx` — Rows 3 & 4; privacy toggle for adviser role
