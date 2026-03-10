@@ -28,28 +28,35 @@ export default function AdviserPage() {
     async function loadClients() {
       setClientsLoading(true)
       try {
+        // Single query: fetch only this adviser's clients with their portfolio + assets embedded
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('*')
+          .select(`
+            id, name, email, role, risk_profile, investor_profile, adviser_id,
+            portfolios (
+              id, total_value, last_updated,
+              assets (
+                id, name, ticker, asset_class, value, currency,
+                quantity, is_crypto, coin_gecko_id, finage_symbol
+              )
+            )
+          `)
+          .eq('adviser_id', user!.id)
           .eq('role', 'client')
 
         if (!profiles?.length) { setClients([]); setClientsLoading(false); return }
 
-        const loaded: Client[] = await Promise.all(
-          profiles.map(async (profile) => {
-            const { data: portfolio } = await supabase
-              .from('portfolios')
-              .select('*')
-              .eq('client_id', profile.id)
-              .single()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const loaded: Client[] = profiles.map((profile: any) => {
+          const portfolio = Array.isArray(profile.portfolios)
+            ? profile.portfolios[0]
+            : profile.portfolios
 
-            const { data: assets } = await supabase
-              .from('assets')
-              .select('*')
-              .eq('portfolio_id', portfolio?.id ?? '')
-              .order('value', { ascending: false })
-
-            const mappedAssets: Asset[] = (assets ?? []).map(a => ({
+          const rawAssets = portfolio?.assets ?? []
+          const mappedAssets: Asset[] = rawAssets
+            .slice()
+            .sort((a: { value: number }, b: { value: number }) => b.value - a.value)
+            .map((a: { id: string; name: string; ticker?: string; asset_class: string; value: number; currency?: string; quantity?: number; is_crypto?: boolean; coin_gecko_id?: string; finage_symbol?: string }) => ({
               id: a.id,
               name: a.name,
               ticker: a.ticker ?? undefined,
@@ -62,25 +69,24 @@ export default function AdviserPage() {
               finageSymbol: a.finage_symbol ?? undefined,
             }))
 
-            return {
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              password: '',
-              role: Role.CLIENT,
-              riskProfile: profile.risk_profile as RiskProfile,
-              investorProfile: profile.investor_profile ?? undefined,
-              adviserId: profile.adviser_id ?? undefined,
-              portfolio: {
-                assets: mappedAssets,
-                totalValue: portfolio?.total_value != null
-                  ? Number(portfolio.total_value)
-                  : mappedAssets.reduce((s, a) => s + a.value, 0),
-                lastUpdated: portfolio?.last_updated ?? new Date().toISOString(),
-              },
-            } as Client
-          })
-        )
+          return {
+            id: profile.id,
+            name: profile.name,
+            email: profile.email,
+            password: '',
+            role: Role.CLIENT,
+            riskProfile: profile.risk_profile as RiskProfile,
+            investorProfile: profile.investor_profile ?? undefined,
+            adviserId: profile.adviser_id ?? undefined,
+            portfolio: {
+              assets: mappedAssets,
+              totalValue: portfolio?.total_value != null
+                ? Number(portfolio.total_value)
+                : mappedAssets.reduce((s: number, a: Asset) => s + a.value, 0),
+              lastUpdated: portfolio?.last_updated ?? new Date().toISOString(),
+            },
+          } as Client
+        })
 
         setClients(loaded)
       } finally {
