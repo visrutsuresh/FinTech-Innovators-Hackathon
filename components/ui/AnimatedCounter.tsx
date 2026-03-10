@@ -20,24 +20,41 @@ export default function AnimatedCounter({
   duration = 1500,
   className = '',
 }: AnimatedCounterProps) {
-  const [display, setDisplay] = useState(0)
+  const [display, setDisplay] = useState(value)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
-  const started = useRef(false)
+
+  // Track the value we're animating FROM so updates animate smoothly
+  const fromRef = useRef(0)
+  const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (!isInView || started.current) return
-    started.current = true
+    if (!isInView) return
+
+    const from = fromRef.current
+    const to = value
+
+    // Cancel any in-progress animation
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
 
     const startTime = performance.now()
     const animate = (now: number) => {
       const elapsed = now - startTime
       const progress = Math.min(elapsed / duration, 1)
       const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
-      setDisplay(eased * value)
-      if (progress < 1) requestAnimationFrame(animate)
+      setDisplay(from + (to - from) * eased)
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate)
+      } else {
+        fromRef.current = to
+        rafRef.current = null
+      }
     }
-    requestAnimationFrame(animate)
+    rafRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
   }, [isInView, value, duration])
 
   const formatted = new Intl.NumberFormat('en-US', {
