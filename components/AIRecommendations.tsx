@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { RecommendationResponse, Portfolio, WellnessScore, RiskProfile, ConversationMessage } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 
 interface AIRecommendationsProps {
   clientId: string
@@ -34,39 +35,32 @@ const PRIORITY_COLOR: Record<string, string> = {
   low: '#6B7280',
 }
 
-const CATEGORY_ICON: Record<string, React.ReactNode> = {
+const PRIORITY_ICON: Record<string, React.ReactNode> = {
   diversification: (
-    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
     </svg>
   ),
   liquidity: (
-    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3" />
+    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
     </svg>
   ),
   risk: (
-    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
     </svg>
   ),
   opportunity: (
-    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   ),
 }
 
-function tabStyle(active: boolean) {
-  return active
-    ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30` }
-    : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.07)' }
-}
-
 export default function AIRecommendations({
   clientId, portfolio, wellnessScore, riskProfile,
 }: AIRecommendationsProps) {
-  // New UUID generated each time this component mounts (panel open = new session)
   const [sessionId] = useState<string>(() => crypto.randomUUID())
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pastSessions, setPastSessions] = useState<ChatSession[]>([])
@@ -76,7 +70,6 @@ export default function AIRecommendations({
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Load past sessions grouped by session_id on mount
   useEffect(() => {
     async function loadSessions() {
       const { data } = await supabase
@@ -105,10 +98,10 @@ export default function AIRecommendations({
         .map(([sid, msgs]) => {
           const firstUser = msgs.find(m => m.role === 'user')
           const raw = firstUser?.text ?? 'Chat'
-          const title = raw.length > 26 ? raw.slice(0, 26) + '…' : raw
+          const title = raw.length > 24 ? raw.slice(0, 24) + '…' : raw
           return { id: sid, title, messages: msgs }
         })
-        .reverse() // most recent first
+        .reverse()
 
       setPastSessions(sessions)
     }
@@ -216,134 +209,159 @@ export default function AIRecommendations({
   return (
     <div className="flex flex-col h-full" style={{ minHeight: '380px' }}>
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(201,162,39,0.12)' }}
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={GOLD} strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white">AI Adviser</p>
-            <p className="text-xs text-white/30">AI-powered — ask anything</p>
-          </div>
-        </div>
-        {activeTab === 'new' && messages.length > 0 && (
-          <button
-            onClick={clearChat}
-            className="text-xs text-white/20 hover:text-white/50 transition-colors"
-            title="Clear this session"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
       {/* Session tabs */}
       {pastSessions.length > 0 && (
         <div
           className="flex gap-1.5 mb-3 overflow-x-auto pb-0.5"
           style={{ scrollbarWidth: 'none' }}
         >
-          <button
-            onClick={() => setActiveTab('new')}
-            className="text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 transition-all"
-            style={tabStyle(activeTab === 'new')}
-          >
-            + New Chat
-          </button>
-          {pastSessions.slice(0, 5).map(s => (
+          <div className="relative rounded-full flex-shrink-0">
+            <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
             <button
-              key={s.id}
-              onClick={() => setActiveTab(s.id)}
-              className="text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 transition-all"
-              style={tabStyle(activeTab === s.id)}
+              onClick={() => setActiveTab('new')}
+              className="relative text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-all"
+              style={activeTab === 'new'
+                ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30` }
+                : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.07)' }
+              }
             >
-              {s.title}
+              + New
             </button>
+          </div>
+          {pastSessions.slice(0, 4).map(s => (
+            <div key={s.id} className="relative rounded-full flex-shrink-0">
+              <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
+              <button
+                onClick={() => setActiveTab(s.id)}
+                className="relative text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-all"
+                style={activeTab === s.id
+                  ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30` }
+                  : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.07)' }
+                }
+              >
+                {s.title}
+              </button>
+            </div>
           ))}
+        </div>
+      )}
+
+      {/* Clear button */}
+      {activeTab === 'new' && messages.length > 0 && (
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={clearChat}
+            className="text-[10px] transition-colors"
+            style={{ color: 'rgba(255,255,255,0.2)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
+          >
+            Clear chat
+          </button>
         </div>
       )}
 
       {/* Message list */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-3 pr-1"
-        style={{ maxHeight: '300px', scrollbarWidth: 'thin' }}
+        className="flex-1 overflow-y-auto space-y-3 pr-0.5"
+        style={{ maxHeight: '320px', scrollbarWidth: 'thin' }}
       >
         <AnimatePresence initial={false}>
           {displayMessages.length === 0 && activeTab === 'new' && !loading && (
-            <motion.p
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-xs text-white/20 text-center py-8"
+              className="flex flex-col items-center justify-center py-10 gap-3"
             >
-              Ask anything about your portfolio
-            </motion.p>
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                style={{ background: 'rgba(201,162,39,0.08)', border: '1px solid rgba(201,162,39,0.15)' }}
+              >
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={GOLD} strokeWidth="1.6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+              </div>
+              <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.22)' }}>
+                Ask anything about your portfolio
+              </p>
+            </motion.div>
           )}
 
           {displayMessages.map(msg => (
             <motion.div
               key={msg.id}
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.22 }}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'user' ? (
                 <div
-                  className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-tr-sm text-xs text-white"
-                  style={{ background: 'rgba(201,162,39,0.15)', border: '1px solid rgba(201,162,39,0.2)' }}
+                  className="max-w-[82%] px-3.5 py-2.5 rounded-2xl rounded-tr-sm text-xs text-white leading-relaxed"
+                  style={{
+                    background: 'rgba(201,162,39,0.14)',
+                    border: '1px solid rgba(201,162,39,0.22)',
+                  }}
                 >
                   {msg.text}
                 </div>
               ) : (
-                <div className="max-w-[95%] space-y-2">
-                  <div
-                    className="px-3.5 py-2.5 rounded-2xl rounded-tl-sm text-xs text-white/65 leading-relaxed"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
-                  >
-                    {msg.text}
-                  </div>
+                <div className="max-w-[96%] space-y-2">
+                  {msg.text && (
+                    <div
+                      className="px-3.5 py-2.5 rounded-2xl rounded-tl-sm text-xs leading-relaxed"
+                      style={{
+                        background: 'rgba(255,255,255,0.045)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        color: 'rgba(255,255,255,0.7)',
+                      }}
+                    >
+                      {msg.text}
+                    </div>
+                  )}
 
                   {msg.response?.recommendations?.map((rec, i) => {
                     const pColor = PRIORITY_COLOR[rec.priority] ?? '#6B7280'
                     return (
-                      <div
+                      <motion.div
                         key={i}
-                        className="px-3 py-2.5 rounded-xl"
-                        style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.06 }}
+                        className="rounded-xl overflow-hidden"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                       >
-                        <div className="flex items-start gap-2">
-                          <div
-                            className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5"
-                            style={{ background: `${pColor}18`, color: pColor }}
-                          >
-                            {CATEGORY_ICON[rec.category] ?? CATEGORY_ICON.risk}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                              <p className="text-xs font-semibold text-white/80">{rec.title}</p>
-                              <span
-                                className="text-[10px] font-medium px-1.5 py-px rounded-full"
-                                style={{ background: `${pColor}18`, color: pColor }}
-                              >
-                                {rec.priority}
-                              </span>
+                        {/* Priority strip */}
+                        <div className="h-0.5 w-full" style={{ background: pColor }} />
+                        <div className="px-3 py-2.5">
+                          <div className="flex items-start gap-2">
+                            <div
+                              className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5"
+                              style={{ background: `${pColor}18`, color: pColor }}
+                            >
+                              {PRIORITY_ICON[rec.category] ?? PRIORITY_ICON.risk}
                             </div>
-                            <p className="text-xs text-white/40 leading-relaxed">{rec.description}</p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                                <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>{rec.title}</p>
+                                <span
+                                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                                  style={{ background: `${pColor}18`, color: pColor }}
+                                >
+                                  {rec.priority}
+                                </span>
+                              </div>
+                              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>{rec.description}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )
                   })}
 
                   {msg.response?.marketContext && (
-                    <p className="text-xs text-white/20 italic px-1 leading-relaxed">
+                    <p className="text-xs italic px-1 leading-relaxed" style={{ color: 'rgba(255,255,255,0.2)' }}>
                       {msg.response.marketContext}
                     </p>
                   )}
@@ -353,21 +371,29 @@ export default function AIRecommendations({
           ))}
         </AnimatePresence>
 
+        {/* Typing indicator */}
         {loading && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
             className="flex justify-start"
           >
             <div
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl rounded-tl-sm"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+              className="flex items-center gap-1 px-4 py-3 rounded-2xl rounded-tl-sm"
+              style={{ background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               {[0, 1, 2].map(i => (
-                <div
+                <motion.div
                   key={i}
-                  className="w-1.5 h-1.5 rounded-full animate-bounce"
-                  style={{ background: 'rgba(255,255,255,0.3)', animationDelay: `${i * 0.15}s` }}
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: GOLD }}
+                  animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                  transition={{
+                    duration: 1.2,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                    ease: 'easeInOut',
+                  }}
                 />
               ))}
             </div>
@@ -375,12 +401,9 @@ export default function AIRecommendations({
         )}
       </div>
 
-      {/* Input — new chat only */}
+      {/* Input bar */}
       {activeTab === 'new' ? (
-        <div
-          className="pt-3 mt-auto"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
-        >
+        <div className="pt-3 mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -388,35 +411,51 @@ export default function AIRecommendations({
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything about your portfolio…"
+              placeholder="Ask about your portfolio…"
               disabled={loading}
-              className="flex-1 text-xs px-3 py-2.5 rounded-xl outline-none text-white placeholder-white/20 disabled:opacity-50"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+              className="flex-1 text-xs px-3.5 py-2.5 rounded-xl outline-none text-white placeholder-white/20 disabled:opacity-50 transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,162,39,0.35)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
             />
-            <button
+            <motion.button
               disabled={!input.trim() || loading}
               onClick={() => sendMessage()}
-              className="text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-90 disabled:opacity-30 flex-shrink-0"
-              style={{ background: GOLD, color: '#080808' }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-30"
+              style={{ background: '#DFD0B8', color: '#080808' }}
             >
+              <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={2} />
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
-            </button>
+            </motion.button>
           </div>
         </div>
       ) : (
-        <div
-          className="pt-3 mt-auto"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
-        >
-          <button
-            onClick={() => setActiveTab('new')}
-            className="w-full text-xs py-2 rounded-xl transition-all text-white/30 hover:text-white/60"
-            style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            + Start new chat
-          </button>
+        <div className="pt-3 mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="relative rounded-xl">
+            <GlowingEffect spread={25} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
+            <button
+              onClick={() => setActiveTab('new')}
+              className="relative w-full text-xs py-2 rounded-xl transition-all"
+              style={{ border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.28)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'rgba(223,208,184,0.25)'
+                e.currentTarget.style.color = '#DFD0B8'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
+                e.currentTarget.style.color = 'rgba(255,255,255,0.28)'
+              }}
+            >
+              + Start new chat
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import WealthWallet from '@/components/WealthWallet'
 import { getArchetype } from '@/lib/archetypes'
 import DirectMessages from '@/components/DirectMessages'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -499,10 +500,10 @@ export default function ProfileView() {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
 
             {/* ── Left column ── */}
-            <div className="lg:col-span-3 space-y-4">
+            <div className="space-y-4">
 
               {isAdviser ? (
                 /* ─── ADVISER: Client connections ─── */
@@ -538,13 +539,16 @@ export default function ProfileView() {
                                   {getArchetype(c.risk_profile)}
                                 </span>
                               )}
-                              <button
-                                onClick={() => router.push(`/client/${c.id}`)}
-                                className="text-[10px] px-2.5 py-1 rounded-lg transition-colors text-white/40 hover:text-white/80"
-                                style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-                              >
-                                View
-                              </button>
+                              <div className="relative rounded-lg">
+                                <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
+                                <button
+                                  onClick={() => router.push(`/client/${c.id}`)}
+                                  className="relative text-[10px] px-2.5 py-1 rounded-lg transition-colors text-white/40 hover:text-white/80"
+                                  style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+                                >
+                                  View
+                                </button>
+                              </div>
                             </div>
                           </motion.div>
                         ))}
@@ -614,14 +618,17 @@ export default function ProfileView() {
                                   ) : requested ? (
                                     <span className="text-[10px]" style={{ color: GOLD }}>Requested</span>
                                   ) : (
-                                    <button
-                                      onClick={() => sendAdviserRequest(r.id)}
-                                      disabled={actionLoading === `send-adv-${r.id}`}
-                                      className="text-[10px] px-2.5 py-1.5 rounded-lg font-semibold transition-all disabled:opacity-50"
-                                      style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}35` }}
-                                    >
-                                      {actionLoading === `send-adv-${r.id}` ? '…' : 'Send Request'}
-                                    </button>
+                                    <div className="relative rounded-lg">
+                                      <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                                      <button
+                                        onClick={() => sendAdviserRequest(r.id)}
+                                        disabled={actionLoading === `send-adv-${r.id}`}
+                                        className="relative text-[10px] px-2.5 py-1.5 rounded-lg font-semibold transition-all disabled:opacity-50"
+                                        style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}35` }}
+                                      >
+                                        {actionLoading === `send-adv-${r.id}` ? '…' : 'Send Request'}
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
                               )
@@ -708,14 +715,17 @@ export default function ProfileView() {
                             </div>
                             <div className="flex items-center gap-2">
                               <StatusPill status={myNok.status} />
-                              <button
-                                onClick={revokeMyNok}
-                                disabled={actionLoading === 'revoke-nok'}
-                                className="text-[10px] px-2 py-1 rounded-lg transition-colors text-white/30 hover:text-red-400 disabled:opacity-40"
-                                style={{ border: '1px solid rgba(255,255,255,0.07)' }}
-                              >
-                                Revoke
-                              </button>
+                              <div className="relative rounded-lg">
+                                <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
+                                <button
+                                  onClick={revokeMyNok}
+                                  disabled={actionLoading === 'revoke-nok'}
+                                  className="relative text-[10px] px-2 py-1 rounded-lg transition-colors text-white/30 hover:text-red-400 disabled:opacity-40"
+                                  style={{ border: '1px solid rgba(255,255,255,0.07)' }}
+                                >
+                                  Revoke
+                                </button>
+                              </div>
                             </div>
                           </div>
                           {myNok.status === 'pending' && (
@@ -766,14 +776,17 @@ export default function ProfileView() {
                                     {isCurrent ? (
                                       <span className="text-[10px]" style={{ color: GOLD }}>Current NOK</span>
                                     ) : (
-                                      <button
-                                        onClick={() => sendNokNomination(r.id)}
-                                        disabled={!!actionLoading}
-                                        className="text-[10px] px-2.5 py-1.5 rounded-lg font-semibold transition-all disabled:opacity-50"
-                                        style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}35` }}
-                                      >
-                                        {actionLoading === `send-nok-${r.id}` ? '…' : myNok ? 'Replace' : 'Nominate'}
-                                      </button>
+                                      <div className="relative rounded-lg">
+                                        <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                                        <button
+                                          onClick={() => sendNokNomination(r.id)}
+                                          disabled={!!actionLoading}
+                                          className="relative text-[10px] px-2.5 py-1.5 rounded-lg font-semibold transition-all disabled:opacity-50"
+                                          style={{ background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}35` }}
+                                        >
+                                          {actionLoading === `send-nok-${r.id}` ? '…' : myNok ? 'Replace' : 'Nominate'}
+                                        </button>
+                                      </div>
                                     )}
                                   </div>
                                 )
@@ -803,12 +816,12 @@ export default function ProfileView() {
 
             {/* ── Right column: Incoming requests ── */}
             <motion.div
-              className="lg:col-span-2"
+              className="flex flex-col"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
             >
-              <Card className="p-6">
+              <Card className="p-6 flex-1">
                 <div className="flex items-center gap-2 mb-5">
                   <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Incoming Requests</p>
                   {totalIncoming > 0 && (
@@ -845,22 +858,28 @@ export default function ProfileView() {
                             Wants to connect as your financial adviser.
                           </p>
                           <div className="flex gap-1.5">
-                            <button
-                              onClick={() => acceptAdviserRequest(req)}
-                              disabled={!!actionLoading}
-                              className="flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
-                              style={{ background: EMERALD, color: '#080808' }}
-                            >
-                              {actionLoading === `accept-adv-${req.id}` ? '…' : 'Accept'}
-                            </button>
-                            <button
-                              onClick={() => rejectAdviserRequest(req.id)}
-                              disabled={!!actionLoading}
-                              className="flex-1 py-1.5 rounded-lg text-[11px] transition-all disabled:opacity-50 text-white/45 hover:text-white/70"
-                              style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-                            >
-                              Decline
-                            </button>
+                            <div className="relative rounded-lg flex-1">
+                              <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                              <button
+                                onClick={() => acceptAdviserRequest(req)}
+                                disabled={!!actionLoading}
+                                className="relative w-full py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
+                                style={{ background: EMERALD, color: '#080808' }}
+                              >
+                                {actionLoading === `accept-adv-${req.id}` ? '…' : 'Accept'}
+                              </button>
+                            </div>
+                            <div className="relative rounded-lg flex-1">
+                              <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                              <button
+                                onClick={() => rejectAdviserRequest(req.id)}
+                                disabled={!!actionLoading}
+                                className="relative w-full py-1.5 rounded-lg text-[11px] transition-all disabled:opacity-50 text-white/45 hover:text-white/70"
+                                style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+                              >
+                                Decline
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -912,30 +931,38 @@ export default function ProfileView() {
 
                           {nom.status === 'pending' && (
                             <div className="flex gap-1.5">
-                              <button
-                                onClick={() => acceptNok(nom.id)}
-                                disabled={!!actionLoading}
-                                className="flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
-                                style={{ background: EMERALD, color: '#080808' }}
-                              >
-                                {actionLoading === `accept-nok-${nom.id}` ? '…' : 'Accept'}
-                              </button>
-                              <button
-                                onClick={() => rejectNok(nom.id)}
-                                disabled={!!actionLoading}
-                                className="flex-1 py-1.5 rounded-lg text-[11px] transition-all disabled:opacity-50 text-white/45 hover:text-white/70"
-                                style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-                              >
-                                Decline
-                              </button>
+                              <div className="relative rounded-lg flex-1">
+                                <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                                <button
+                                  onClick={() => acceptNok(nom.id)}
+                                  disabled={!!actionLoading}
+                                  className="relative w-full py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
+                                  style={{ background: EMERALD, color: '#080808' }}
+                                >
+                                  {actionLoading === `accept-nok-${nom.id}` ? '…' : 'Accept'}
+                                </button>
+                              </div>
+                              <div className="relative rounded-lg flex-1">
+                                <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                                <button
+                                  onClick={() => rejectNok(nom.id)}
+                                  disabled={!!actionLoading}
+                                  className="relative w-full py-1.5 rounded-lg text-[11px] transition-all disabled:opacity-50 text-white/45 hover:text-white/70"
+                                  style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+                                >
+                                  Decline
+                                </button>
+                              </div>
                             </div>
                           )}
 
                           {nom.status === 'accepted' && (
+                            <div className="relative rounded-lg">
+                              <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
                             <button
                               onClick={() => viewNominatorPortfolio(nom)}
                               disabled={portfolioLoading}
-                              className="w-full py-1.5 rounded-lg text-[11px] font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                              className="relative w-full py-1.5 rounded-lg text-[11px] font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                               style={{ background: 'rgba(16,185,129,0.1)', color: EMERALD, border: '1px solid rgba(16,185,129,0.2)' }}
                             >
                               {portfolioLoading ? (
@@ -950,6 +977,7 @@ export default function ProfileView() {
                                 </>
                               )}
                             </button>
+                            </div>
                           )}
                         </div>
                       ))}
@@ -984,16 +1012,18 @@ export default function ProfileView() {
                       {connectedClients.map(c => {
                         const active = messageTarget?.id === c.id
                         return (
-                          <button
-                            key={c.id}
-                            onClick={() => setMessageTarget(active ? null : { id: c.id, name: c.name })}
-                            className="text-xs px-3 py-1.5 rounded-full transition-all font-medium"
-                            style={active
-                              ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30` }
-                              : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}
-                          >
-                            {c.name.split(' ')[0]}
-                          </button>
+                          <div key={c.id} className="relative rounded-full">
+                            <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                            <button
+                              onClick={() => setMessageTarget(active ? null : { id: c.id, name: c.name })}
+                              className="relative text-xs px-3 py-1.5 rounded-full transition-all font-medium"
+                              style={active
+                                ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30` }
+                                : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}
+                            >
+                              {c.name.split(' ')[0]}
+                            </button>
+                          </div>
                         )
                       })}
                     </div>
@@ -1056,8 +1086,9 @@ export default function ProfileView() {
                 </div>
                 <button
                   onClick={() => setNokPortfolio(null)}
-                  className="text-white/25 hover:text-white/70 transition-colors"
+                  className="relative text-white/25 hover:text-white/70 transition-colors rounded-md p-1"
                 >
+                  <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
                   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>

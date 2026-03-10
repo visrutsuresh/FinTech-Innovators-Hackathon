@@ -13,6 +13,7 @@ import WealthWallet from '@/components/WealthWallet'
 import WellnessScorecard from '@/components/wellness/WellnessScorecard'
 import ScoreBreakdown from '@/components/wellness/ScoreBreakdown'
 import { useFeaturePanel } from '@/components/layout/FeaturePanelContext'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 
 interface ClientViewProps {
   client: Client
@@ -51,7 +52,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   return (
     <div
       className={`rounded-2xl ${className}`}
-      style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.06)' }}
+      style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.06)' }}
     >
       {children}
     </div>
@@ -60,7 +61,10 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">
+    <p
+      className="text-[11px] font-semibold uppercase tracking-widest mb-4"
+      style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '0.09em' }}
+    >
       {children}
     </p>
   )
@@ -301,52 +305,84 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="flex items-start justify-between pt-4 mb-7 flex-wrap gap-3"
         >
           <div className="flex items-center gap-3 flex-wrap">
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-              style={{ background: 'rgba(201,162,39,0.12)', color: '#C9A227' }}
+              className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+              style={{
+                background: 'rgba(201,162,39,0.12)',
+                color: '#C9A227',
+                border: '2px solid rgba(201,162,39,0.2)',
+                boxShadow: '0 0 16px rgba(201,162,39,0.1)',
+              }}
             >
               {client.name.charAt(0)}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">{client.name}</h1>
-              <p className="text-xs text-white/35">{client.email}</p>
+              <h1 className="text-xl font-bold text-white tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+                {client.name}
+              </h1>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{client.email}</p>
             </div>
             <span
-              className="text-xs font-medium px-2.5 py-1 rounded-full ml-1"
-              style={{ background: 'rgba(201,162,39,0.08)', color: '#C9A227', border: '1px solid rgba(201,162,39,0.2)' }}
+              className="text-xs font-semibold px-3 py-1 rounded-full"
+              style={{
+                background: 'rgba(201,162,39,0.09)',
+                color: '#C9A227',
+                border: '1px solid rgba(201,162,39,0.2)',
+              }}
             >
               {getArchetype(client.riskProfile)}
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Manage portfolio — only visible to the client themselves */}
             {user.role === Role.CLIENT && (
-              <button
-                onClick={openManage}
-                className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/80 transition-colors"
-              >
-                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Manage portfolio
-              </button>
+              <div className="relative rounded-lg">
+                <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                <button
+                  onClick={openManage}
+                  className="relative flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.5)',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = 'rgba(223,208,184,0.3)'
+                    e.currentTarget.style.color = '#DFD0B8'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.5)'
+                  }}
+                >
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Manage
+                </button>
+              </div>
             )}
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-white/25">
-                Updated {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.22)' }}>
+                {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
               <button
                 onClick={handleManualRefresh} disabled={refreshing}
                 title="Fetch latest prices now"
-                className="text-white/30 hover:text-white/70 transition-colors disabled:opacity-40"
+                className="relative transition-colors disabled:opacity-40 rounded-md p-0.5"
+                style={{ color: 'rgba(255,255,255,0.28)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#DFD0B8')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.28)')}
               >
+                <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
                 <svg
-                  width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
+                  width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
                   className={refreshing ? 'animate-spin' : ''}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -355,15 +391,31 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
             </div>
 
             {user.role === Role.ADVISER && (
-              <button
-                onClick={() => router.push('/adviser')}
-                className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/80 transition-colors"
-              >
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to dashboard
-              </button>
+              <div className="relative rounded-lg">
+                <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                <button
+                  onClick={() => router.push('/adviser')}
+                  className="relative flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.45)',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.45)'
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                  }}
+                >
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Dashboard
+                </button>
+              </div>
             )}
           </div>
         </motion.div>
@@ -410,28 +462,45 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
 
             {/* Modal */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 mx-auto max-w-md rounded-2xl flex flex-col"
               style={{
-                background: '#0E0E0E',
+                background: '#111111',
                 border: '1px solid rgba(255,255,255,0.1)',
                 maxHeight: '80vh',
+                boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
               }}
             >
               {/* Modal header */}
               <div
                 className="flex items-center justify-between px-5 py-4 flex-shrink-0"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                style={{
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.02)',
+                }}
               >
                 <div>
                   <p className="text-sm font-semibold text-white">Manage Portfolio</p>
-                  <p className="text-xs text-white/30 mt-0.5">Add, edit or remove your assets</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Add, edit or remove your assets</p>
                 </div>
-                <button onClick={() => setManageOpen(false)} className="text-white/25 hover:text-white/70 transition-colors">
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <button
+                  onClick={() => setManageOpen(false)}
+                  className="relative w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)'
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.3)'
+                  }}
+                >
+                  <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -523,14 +592,17 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
 
                 {saveError && <p className="text-xs text-red-400">{saveError}</p>}
 
-                <button
-                  onClick={handleSavePortfolio}
-                  disabled={saving}
-                  className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
-                  style={{ background: '#C9A227', color: '#080808' }}
-                >
-                  {saving ? 'Saving…' : 'Save changes'}
-                </button>
+                <div className="relative rounded-xl">
+                  <GlowingEffect spread={30} glow={false} disabled={false} proximity={60} inactiveZone={0.01} borderWidth={2} />
+                  <button
+                    onClick={handleSavePortfolio}
+                    disabled={saving}
+                    className="relative w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ background: '#DFD0B8', color: '#080808' }}
+                  >
+                    {saving ? 'Saving…' : 'Save changes'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </>

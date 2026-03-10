@@ -29,7 +29,6 @@ export default function AdviserPage() {
     async function loadClients() {
       setClientsLoading(true)
       try {
-        // Single query: fetch only this adviser's clients with their portfolio + assets embedded
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
@@ -108,8 +107,8 @@ export default function AdviserPage() {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ background: '#080808' }}>
         <div
-          className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: '#C9A227', borderTopColor: 'transparent' }}
+          className="w-5 h-5 rounded-full border-2 animate-spin"
+          style={{ borderColor: 'rgba(201,162,39,0.3)', borderTopColor: '#C9A227' }}
         />
       </div>
     )
@@ -118,35 +117,81 @@ export default function AdviserPage() {
   return (
     <div className="min-h-screen px-5 md:px-8 pt-20 pb-16" style={{ background: '#080808' }}>
       <div className="max-w-6xl mx-auto">
+
+        {/* Page header */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="flex items-center justify-between mb-8 pt-4"
         >
           <div>
-            <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Adviser Dashboard</p>
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-1.5"
+              style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em' }}>
+              Adviser Dashboard
+            </p>
+            <h1 className="text-2xl font-bold text-white tracking-tight" style={{ letterSpacing: '-0.02em' }}>
               Good day, <span style={{ color: '#C9A227' }}>{user.name}</span>
             </h1>
+          </div>
+
+          <div
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
+            style={{
+              background: 'rgba(16,185,129,0.08)',
+              border: '1px solid rgba(16,185,129,0.2)',
+              color: '#10B981',
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+            {new Date().toLocaleDateString('en-SG', { weekday: 'long', month: 'long', day: 'numeric' })}
           </div>
         </motion.div>
 
         {clientsLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div
-              className="w-5 h-5 rounded-full border-2 animate-spin"
-              style={{ borderColor: '#C9A227', borderTopColor: 'transparent' }}
-            />
+          <div className="space-y-4">
+            {/* Stats skeleton */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map(i => (
+                <div
+                  key={i}
+                  className="p-5 rounded-2xl space-y-3"
+                  style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                  <div className="skeleton w-9 h-9 rounded-xl" />
+                  <div className="skeleton h-6 w-24 rounded" />
+                  <div className="skeleton h-3 w-20 rounded" />
+                </div>
+              ))}
+            </div>
+            {/* Table skeleton */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="skeleton h-4 w-28 rounded" />
+              </div>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div className="skeleton w-8 h-8 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="skeleton h-3 w-32 rounded" />
+                    <div className="skeleton h-2.5 w-40 rounded" />
+                  </div>
+                  <div className="skeleton h-3 w-20 rounded" />
+                  <div className="skeleton h-5 w-20 rounded-full" />
+                  <div className="skeleton h-5 w-16 rounded-full" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <>
-            <div className="mb-8">
+            <div className="mb-6">
               <SummaryStats clients={clients} />
             </div>
 
             <div
               className="rounded-2xl overflow-hidden"
-              style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.06)' }}
+              style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.06)' }}
             >
               <div
                 className="px-6 py-4 flex items-center justify-between"
@@ -154,7 +199,7 @@ export default function AdviserPage() {
               >
                 <div>
                   <h2 className="text-sm font-semibold text-white">Client Roster</h2>
-                  <p className="text-xs text-white/35 mt-0.5">
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
                     {clients.length} clients · click a row to open the full report
                   </p>
                 </div>
