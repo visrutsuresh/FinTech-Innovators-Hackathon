@@ -28,6 +28,7 @@ export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const onProfile = pathname === '/profile'
+  const onLanding = pathname === '/'
   const onAuthPage = pathname?.startsWith('/auth')
   const [scrolled, setScrolled] = useState(false)
 
@@ -62,6 +63,12 @@ export default function Navbar() {
   }, [onProfile, dashboardUrl, router])
 
   // ── Tab definitions ──────────────────────────────────────────────────────────
+
+  // When a logged-in user visits the landing page — Dashboard shortcut + Profile only
+  const landingTabs: TabItem[] = useMemo(() => [
+    { title: 'Dashboard', icon: Home, onClick: () => router.push(dashboardUrl) },
+    { title: 'Profile',   icon: User, onClick: handleProfileClick },
+  ], [dashboardUrl, handleProfileClick, router])
 
   // When on the profile page — show only Dashboard + Profile (no feature panels)
   const profilePageTabs: TabItem[] = useMemo(() => [
@@ -107,7 +114,8 @@ export default function Navbar() {
 
   // tabs must be declared before activeIndex (which reads it)
   const tabs =
-    onProfile                                 ? profilePageTabs
+    onLanding                                 ? (user ? landingTabs : null)
+    : onProfile                               ? profilePageTabs
     : user?.role === Role.ADVISER && clientCtx ? adviserClientTabs
     : user?.role === Role.ADVISER             ? adviserTabs
     : user?.role === Role.CLIENT              ? clientTabs
