@@ -76,19 +76,19 @@ export default function Navbar() {
     { title: 'Black Swan', icon: TrendingDown, onClick: () => togglePanel('blackswan') },
     { title: 'Liquidity',  icon: Zap,          onClick: () => togglePanel('flash') },
     { title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') },
+    { title: 'AI Adviser', icon: Sparkles,     onClick: toggleChat },
     { type: 'separator' },
     { title: 'Privacy',    icon: privacyMode ? EyeOff : Eye, onClick: togglePrivacy },
     { title: 'Profile',    icon: User,         onClick: handleProfileClick },
-    { title: 'AI Adviser', icon: Sparkles,     onClick: toggleChat },
   ], [togglePanel, privacyMode, togglePrivacy, handleProfileClick, toggleChat])
 
   // ADVISER overview — omit Home when already on /adviser
   const adviserTabs: TabItem[] = useMemo(() => {
     const items: TabItem[] = []
     if (!onAdviserDashboard) items.push({ title: 'Dashboard', icon: Home, onClick: () => router.push('/adviser') })
-    items.push({ type: 'separator' })
-    items.push({ title: 'Profile',    icon: User,     onClick: handleProfileClick })
     items.push({ title: 'AI Adviser', icon: Sparkles, onClick: toggleChat })
+    items.push({ type: 'separator' })
+    items.push({ title: 'Profile', icon: User, onClick: handleProfileClick })
     return items
   }, [onAdviserDashboard, handleProfileClick, toggleChat])
 
@@ -99,9 +99,9 @@ export default function Navbar() {
     items.push({ title: 'Black Swan', icon: TrendingDown, onClick: () => togglePanel('blackswan') })
     items.push({ title: 'Liquidity',  icon: Zap,          onClick: () => togglePanel('flash') })
     items.push({ title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') })
+    items.push({ title: 'AI Adviser', icon: Sparkles,     onClick: toggleChat })
     items.push({ type: 'separator' })
     items.push({ title: 'Profile',    icon: User,         onClick: handleProfileClick })
-    items.push({ title: 'AI Adviser', icon: Sparkles,     onClick: toggleChat })
     return items
   }, [onClientDashboard, user?.id, togglePanel, handleProfileClick, toggleChat])
 
