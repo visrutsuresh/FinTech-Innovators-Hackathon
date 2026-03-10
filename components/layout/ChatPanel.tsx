@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useChatPanel } from './ChatPanelContext'
 import { useAuth } from './AuthContext'
+import { useFeaturePanel } from './FeaturePanelContext'
 import { Role } from '@/types'
 import { calculateWellnessScore } from '@/lib/wellness'
 import AIRecommendations from '@/components/AIRecommendations'
@@ -12,13 +13,35 @@ export const PANEL_WIDTH = 380
 export default function ChatPanel() {
   const { isOpen, close } = useChatPanel()
   const { user } = useAuth()
+  const { clientCtx } = useFeaturePanel()
 
   const isClient = user?.role === Role.CLIENT
+  const isAdviserWithClient = user?.role === Role.ADVISER && !!clientCtx
 
-  // Compute wellness score from the current user's portfolio (client-side)
-  const wellnessScore = isClient
-    ? calculateWellnessScore(user.portfolio, user.riskProfile)
+  // For a logged-in client: use their own portfolio
+  // For an adviser viewing a client page: use clientCtx portfolio
+  const activePortfolio = isClient
+    ? user.portfolio
+    : isAdviserWithClient ? clientCtx!.portfolio : null
+
+  const activeRiskProfile = isClient
+    ? user.riskProfile
+    : isAdviserWithClient ? clientCtx!.riskProfile : null
+
+  const wellnessScore = activePortfolio && activeRiskProfile
+    ? calculateWellnessScore(activePortfolio, activeRiskProfile)
     : null
+
+  // Chat history key: client's own ID, or adviser's ID scoped to the viewed client
+  const chatKey = isClient
+    ? user.id
+    : isAdviserWithClient ? `${user!.id}:${clientCtx!.clientId}` : null
+
+  // chatKey is UUID-format only for clients; for advisers we use a namespaced key
+  // AIRecommendations uses this as the Supabase client_id — adviser messages stored under adviser.id
+  const chatClientId = isClient ? user.id : user?.id ?? ''
+
+  const canChat = (isClient || isAdviserWithClient) && !!wellnessScore
 
   return (
     <AnimatePresence>
@@ -30,7 +53,7 @@ export default function ChatPanel() {
           transition={{ type: 'spring', damping: 32, stiffness: 320 }}
           className="fixed right-0 bottom-0 z-40 flex flex-col"
           style={{
-            top: 56, // navbar height
+            top: 56,
             width: PANEL_WIDTH,
             background: '#0E0E0E',
             borderLeft: '1px solid rgba(255,255,255,0.07)',
@@ -52,13 +75,12 @@ export default function ChatPanel() {
               </div>
               <div>
                 <p className="text-xs font-semibold text-white">AI Adviser</p>
-                <p className="text-[10px] text-white/30">⌘L to toggle</p>
+                <p className="text-[10px] text-white/30">
+                  {isAdviserWithClient ? `Analysing ${clientCtx!.clientId}` : '⌘L to toggle'}
+                </p>
               </div>
             </div>
-            <button
-              onClick={close}
-              className="text-white/25 hover:text-white/70 transition-colors"
-            >
+            <button onClick={close} className="text-white/25 hover:text-white/70 transition-colors">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -67,12 +89,13 @@ export default function ChatPanel() {
 
           {/* Panel body */}
           <div className="flex-1 overflow-hidden p-4">
-            {isClient && wellnessScore ? (
+            {canChat ? (
               <AIRecommendations
-                clientId={user.id}
-                portfolio={user.portfolio}
-                wellnessScore={wellnessScore}
-                riskProfile={user.riskProfile}
+                key={chatKey ?? chatClientId}
+                clientId={chatClientId}
+                portfolio={activePortfolio!}
+                wellnessScore={wellnessScore!}
+                riskProfile={activeRiskProfile!}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
