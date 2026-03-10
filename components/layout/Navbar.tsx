@@ -153,7 +153,6 @@ export default function Navbar() {
     return null
   }, [user, tabs, activePanel, privacyBarExpanded, onProfile, chatOpen])
 
-  const isClient = user?.role === Role.CLIENT
   const privacyTabIndex = isClient && tabs ? tabs.findIndex(t => !('type' in t) && (t as { title: string }).title === 'Privacy') : -1
   const showPrivacyExpand = isClient && privacyTabIndex >= 0 && privacyBarExpanded
 
