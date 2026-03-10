@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 import { AuthProvider } from '@/components/layout/AuthContext'
 import { ChatPanelProvider } from '@/components/layout/ChatPanelContext'
@@ -9,7 +9,20 @@ import ChatPanel from '@/components/layout/ChatPanel'
 import FeaturePanel from '@/components/layout/FeaturePanel'
 import MainLayout from '@/components/layout/MainLayout'
 
-const inter = Inter({ subsets: ['latin'] })
+const alteHaas = localFont({
+  src: [
+    { path: '../public/fonts/AlteHaasGroteskRegular.ttf', weight: '400', style: 'normal' },
+    { path: '../public/fonts/AlteHaasGroteskBold.ttf',    weight: '700', style: 'normal' },
+  ],
+  display: 'swap',
+  variable: '--font-alte',
+})
+
+const ballet = localFont({
+  src: '../public/fonts/Ballet-Regular-VariableFont_opsz.ttf',
+  display: 'swap',
+  variable: '--font-ballet',
+})
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -23,8 +36,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-[#080808] text-white min-h-screen`}>
+    <html lang="en" className={`dark ${alteHaas.variable} ${ballet.variable}`}>
+      <body className={`${alteHaas.className} bg-[#080808] text-white min-h-screen`}>
         <AuthProvider>
           <ChatPanelProvider>
             <FeaturePanelProvider>

@@ -1,39 +1,158 @@
 @import "tailwindcss";
 
+/* ── Design Tokens ───────────────────────────────────────────── */
 :root {
-  --background: #080808;
-  --foreground: #F0F0F0;
+  --background: #0D0D0D;
+  --foreground: #FFFFFF;
+
+  /* Surfaces */
+  --surface-card:     #1A1E24;
+  --surface-elevated: #22272F;
+  --surface-modal:    #111418;
+
+  /* Accent scale */
+  --cream:        #DFD0B8;
+  --cream-dim:    rgba(223, 208, 184, 0.12);
+  --cream-border: rgba(223, 208, 184, 0.20);
+  --cream-glow:   rgba(223, 208, 184, 0.30);
+
+  --taupe:        #948979;
+  --taupe-dim:    rgba(148, 137, 121, 0.15);
+
+  /* Semantic score colours */
+  --score-green:  #2D6A4F;
+  --score-amber:  #FAA307;
+  --score-red:    #C1121F;
+
+  /* Borders */
+  --border-subtle: rgba(223, 208, 184, 0.08);
+  --border-muted:  rgba(223, 208, 184, 0.05);
+  --border-strong: rgba(223, 208, 184, 0.18);
+
+  /* Typography */
+  --text-primary:   #FFFFFF;
+  --text-secondary: rgba(223, 208, 184, 0.85);
+  --text-muted:     rgba(148, 137, 121, 0.75);
+
+  /* Radius */
+  --radius-card:   16px;
+  --radius-button: 12px;
+  --radius-pill:   9999px;
+  --radius-sm:     8px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-alte);
 }
 
+/* ── Base ────────────────────────────────────────────────────── */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-alte), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
   box-sizing: border-box;
 }
 
+.tabular-nums, [data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #080808;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #1A1A1A;
-  border-radius: 3px;
+  background: rgba(148, 137, 121, 0.25);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cream);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #C9A227;
+/* ── Utility classes ─────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(148,137,121,0.06) 25%,
+    rgba(148,137,121,0.12) 50%,
+    rgba(148,137,121,0.06) 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* Cream glow on borders */
+.glow-cream {
+  box-shadow: 0 0 0 1px var(--cream-border), 0 0 24px var(--cream-dim);
+}
+.glow-cream-sm {
+  box-shadow: 0 0 0 1px var(--cream-border), 0 0 12px rgba(223,208,184,0.12);
+}
+
+/* Legacy aliases */
+.glow-gold    { box-shadow: 0 0 0 1px var(--cream-border), 0 0 24px var(--cream-dim); }
+.glow-gold-sm { box-shadow: 0 0 0 1px var(--cream-border), 0 0 12px rgba(223,208,184,0.12); }
+
+/* Gradient border via pseudo-element */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--cream-glow), transparent 50%, rgba(148,137,121,0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; filter: blur(4px); }
+  50% { opacity: 1; filter: blur(2px); }
+}
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+input:focus, textarea:focus, select:focus, button:focus-visible {
+  outline: 2px solid var(--cream-border);
+  outline-offset: 2px;
+}
+
+.hero-glow {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(223,208,184,0.08) 0%, transparent 70%);
+}
+
+.glass-card {
+  background: rgba(26, 30, 36, 0.85);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
 }
