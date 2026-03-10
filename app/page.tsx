@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion'
+import { motion, animate, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from '@/components/layout/AuthContext'
 
@@ -79,6 +79,7 @@ const RIGHT_NODES = [
 ]
 const BAR_H = [32, 56, 78, 44, 92, 36, 64, 50]
 const ASSET_CLASSES = ['Stocks', 'Crypto', 'Real Estate', 'Bonds', 'Cash', 'Private Equity']
+
 
 // ── Magnetic button hook ──────────────────────────────────────────────────────
 function useMagnetic(strength = 0.3) {
@@ -278,6 +279,110 @@ function PillarCard({ p, i }: { p: typeof pillars[0] & { accentBright?: string }
   )
 }
 
+// ── Swing keyframes: 70-sample damped sine, x offset from natural position ────
+// Buttons stay in-flow the entire time — only their CSS transform is animated.
+// x starts at ±600 (off-screen), ends at 0 (natural position). No layout jump.
+function buildSwingFrames(n = 70) {
+  const xs: number[] = [], y1s: number[] = [], x2s: number[] = [], y2s: number[] = [], ts: number[] = []
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1)
+    const et = t * t * t * (t * (t * 6 - 15) + 10) // smoothstep — decelerates naturally
+    const decay = Math.pow(1 - t, 1.5)
+    const wave  = Math.sin(2 * Math.PI * 2.5 * t) * 70 * decay
+    xs.push(600 * (1 - et))    // +600 → 0  (Sign in enters from right)
+    y1s.push(wave)
+    x2s.push(-600 * (1 - et))  // -600 → 0  (Get started enters from left)
+    y2s.push(-wave)             // mirror phase
+    ts.push(t)
+  }
+  return { xs, y1s, x2s, y2s, ts }
+}
+const SWING = buildSwingFrames()
+
+// ── Animated CTA ─────────────────────────────────────────────────────────────
+function AnimatedCTA({ mounted }: { mounted: boolean }) {
+  const [animDone, setAnimDone] = useState(false)
+  const mag1 = useMagnetic(0.25)
+  const mag2 = useMagnetic(0.25)
+
+  // x/y offsets from the buttons' natural in-flow position.
+  // End at 0 → land exactly where the flex layout placed them.
+  const ax1 = useMotionValue(600),  ay1 = useMotionValue(0)
+  const ax2 = useMotionValue(-600), ay2 = useMotionValue(0)
+
+  useEffect(() => {
+    if (!mounted) return
+    const opts = { duration: 2.6, ease: 'linear' as const, times: SWING.ts }
+    const run = async () => {
+      await new Promise(r => setTimeout(r, 150))
+      await Promise.all([
+        animate(ax1, SWING.xs,  opts),
+        animate(ay1, SWING.y1s, opts),
+        animate(ax2, SWING.x2s, { ...opts, delay: 0.13 }),
+        animate(ay2, SWING.y2s, { ...opts, delay: 0.13 }),
+      ])
+      setAnimDone(true)
+    }
+    run()
+  }, [mounted, ax1, ay1, ax2, ay2])
+
+  // After animation ends, combine magnetic pull with the (now-zero) anim offset
+  const cx1 = useTransform([ax1, mag1.sx] as const, ([a, m]: number[]) => a + m)
+  const cy1 = useTransform([ay1, mag1.sy] as const, ([a, m]: number[]) => a + m)
+  const cx2 = useTransform([ax2, mag2.sx] as const, ([a, m]: number[]) => a + m)
+  const cy2 = useTransform([ay2, mag2.sy] as const, ([a, m]: number[]) => a + m)
+
+  return (
+    <motion.div
+      className="flex items-center gap-3"
+      animate={animDone ? { y: [0, -6, 0] } : {}}
+      transition={animDone ? { y: { duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.2 } } : {}}
+    >
+      {/* Sign in */}
+      <div className="relative rounded-full">
+        {animDone && <GlowingEffect spread={20} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />}
+        <motion.a
+          ref={mag1.ref}
+          href="/auth/login"
+          whileHover={animDone ? { color: C.white } : {}}
+          whileTap={animDone ? { scale: 0.97 } : {}}
+          className="relative text-base font-semibold px-10 py-4 rounded-full inline-block"
+          style={{
+            x: cx1, y: cy1,
+            color: C.midA(0.7),
+            border: `1px solid ${C.midA(0.3)}`,
+            textDecoration: 'none',
+            pointerEvents: animDone ? 'auto' : 'none',
+          }}
+        >
+          Sign in
+        </motion.a>
+      </div>
+
+      {/* Get started */}
+      <div className="relative rounded-full">
+        {animDone && <GlowingEffect spread={20} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />}
+        <motion.a
+          ref={mag2.ref}
+          href="/auth/signup"
+          whileHover={animDone ? { scale: 1.03, boxShadow: `0 0 24px ${C.lightA(0.2)}` } : {}}
+          whileTap={animDone ? { scale: 0.96 } : {}}
+          className="relative text-base font-semibold px-10 py-4 rounded-full inline-block"
+          style={{
+            x: cx2, y: cy2,
+            background: C.light,
+            color: C.bg,
+            textDecoration: 'none',
+            pointerEvents: animDone ? 'auto' : 'none',
+          }}
+        >
+          Get started
+        </motion.a>
+      </div>
+    </motion.div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
@@ -311,9 +416,6 @@ export default function LandingPage() {
     cursorX.set((e.clientX - r.left) / r.width)
     cursorY.set((e.clientY - r.top) / r.height)
   }, [cursorX, cursorY])
-
-  const mag1 = useMagnetic(0.25)
-  const mag2 = useMagnetic(0.25)
 
   return (
     <div ref={pageRef} style={{ background: C.bg, color: '#fff', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -473,55 +575,7 @@ export default function LandingPage() {
             </motion.p>
 
             {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={mounted ? { opacity: 1, y: [0, -6, 0] } : {}}
-              transition={mounted ? {
-                opacity: { delay: 0.68, duration: 0.5, ease: E },
-                y: { delay: 1.4, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
-              } : {}}
-              className="flex items-center gap-3"
-            >
-              <div className="relative rounded-full">
-                <GlowingEffect spread={20} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
-                <motion.a
-                  ref={mag1.ref}
-                  href="/auth/login"
-                  whileHover={{ color: C.white }}
-                  whileTap={{ scale: 0.97 }}
-                  className="relative text-base font-semibold px-10 py-4 rounded-full inline-block"
-                  style={{
-                    x: mag1.sx,
-                    y: mag1.sy,
-                    color: C.midA(0.7),
-                    border: `1px solid ${C.midA(0.3)}`,
-                    textDecoration: 'none',
-                  }}
-                >
-                  Sign in
-                </motion.a>
-              </div>
-
-              <div className="relative rounded-full">
-                <GlowingEffect spread={20} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
-                <motion.a
-                  ref={mag2.ref}
-                  href="/auth/signup"
-                  whileHover={{ scale: 1.03, boxShadow: `0 0 24px ${C.lightA(0.2)}` }}
-                  whileTap={{ scale: 0.96 }}
-                  className="relative text-base font-semibold px-10 py-4 rounded-full inline-block"
-                  style={{
-                    x: mag2.sx,
-                    y: mag2.sy,
-                    background: C.light,
-                    color: C.bg,
-                    textDecoration: 'none',
-                  }}
-                >
-                  Get started
-                </motion.a>
-              </div>
-            </motion.div>
+            <AnimatedCTA mounted={mounted} />
           </motion.div>
 
           {/* ── BAR CHART — bottom center ── */}
