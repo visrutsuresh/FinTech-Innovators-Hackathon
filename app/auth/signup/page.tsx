@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Confetti from 'react-confetti'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -141,6 +142,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [signedUpUserId, setSignedUpUserId] = useState<string | null>(null)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
   const { login } = useAuth()
   const router = useRouter()
 
@@ -342,8 +344,25 @@ export default function SignupPage() {
   const stepLabel = { info: 'Create account', questionnaire: 'Investor profile', result: 'Your profile', assets: 'Add your assets' }[step]
   const stepSub = { info: 'Start your wellness journey', questionnaire: `Question ${currentQ + 1} of ${QUESTIONS.length}`, result: 'Based on your answers', assets: 'Tell us what you own' }[step]
 
+  // Confetti: run once when archetype result is shown; need client-side dimensions for SSR
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+  }, [])
+  const showConfetti = step === 'result' && windowSize.width > 0 && windowSize.height > 0
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-start px-4 pt-16 pb-10 sm:pb-14 sm:px-6" style={{ background: C.bg }}>
+      {showConfetti && (
+        <Confetti
+          width={windowSize.width}
+          height={windowSize.height}
+          numberOfPieces={400}
+          recycle={false}
+          gravity={0.2}
+          colors={[C.light, C.mid, '#6EC4A5', C.deep, '#DFD0B8', '#948979']}
+        />
+      )}
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
         className="w-full max-w-sm sm:max-w-md"
@@ -354,7 +373,7 @@ export default function SignupPage() {
             <span className="font-ballet text-sm text-white" style={{ lineHeight: 1 }}>Huat</span>
           </Link>
           <h1 className="text-xl font-bold text-white tracking-tight" style={{ letterSpacing: '-0.02em' }}>{stepLabel}</h1>
-          <p className="text-xs mt-0.5" style={{ color: C.midA(0.6) }}>{stepSub}</p>
+          <p className="text-xs mt-0.5" style={{ color: C.midA(0.8) }}>{stepSub}</p>
         </div>
 
         <AnimatePresence mode="wait">
@@ -534,12 +553,12 @@ export default function SignupPage() {
                     className="object-contain"
                   />
                 </div>
-                <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: C.midA(0.45) }}>Your investor profile</p>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: C.midA(0.8) }}>Your investor profile</p>
                 <h2 className="text-xl font-bold mb-3" style={{ color: C.light }}>{profile.name}</h2>
-                <p className="text-sm leading-relaxed mb-6" style={{ color: C.midA(0.6) }}>{profile.description}</p>
+                <p className="text-sm leading-relaxed mb-6" style={{ color: C.midA(0.8) }}>{profile.description}</p>
                 <div className="rounded-xl px-4 py-2.5 mb-6 text-left" style={{ background: C.deepA(0.5), border: `1px solid ${C.midA(0.14)}` }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: C.midA(0.5) }}>Risk profile mapped to</span>
+                    <span className="text-xs" style={{ color: C.midA(0.8) }}>Risk profile mapped to</span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full capitalize"
                       style={{ background: profile.riskProfile === RiskProfile.CONSERVATIVE ? 'rgba(110,196,165,0.12)' : profile.riskProfile === RiskProfile.MODERATE ? C.lightA(0.1) : 'rgba(239,68,68,0.12)', color: profile.riskProfile === RiskProfile.CONSERVATIVE ? '#6EC4A5' : profile.riskProfile === RiskProfile.MODERATE ? C.light : '#EF7A7A' }}>
                       {profile.riskProfile}
