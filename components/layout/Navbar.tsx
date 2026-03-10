@@ -5,10 +5,34 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useAuth, Role } from './AuthContext'
 import { useChatPanel } from './ChatPanelContext'
+import { useFeaturePanel, type FeaturePanelId } from './FeaturePanelContext'
+
+// Icon definitions for feature panels
+const FEATURE_ICONS: { id: FeaturePanelId; title: string; path: string }[] = [
+  {
+    id: 'blackswan',
+    title: 'Black Swan Scenarios',
+    // Trending down / crash arrow
+    path: 'M2.25 6L9 12.75l4.286-4.286a11.948 11.948 0 014.306 6.43l.776 2.898m0 0 3.182-5.511m-3.182 5.51-5.511-3.181',
+  },
+  {
+    id: 'flash',
+    title: 'Flash Liquidity & Stress Test',
+    // Lightning bolt
+    path: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z',
+  },
+  {
+    id: 'legacy',
+    title: 'Legacy & Inheritance Readiness',
+    // Document with lines
+    path: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  },
+]
 
 export default function Navbar() {
   const { user, logout, isLoading } = useAuth()
   const { isOpen, toggle } = useChatPanel()
+  const { activePanel, clientCtx, privacyMode, openPanel, closePanel, togglePrivacy } = useFeaturePanel()
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -79,6 +103,59 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
+            )}
+
+            {/* Feature panel icons — only when a client page has registered its data */}
+            {clientCtx && (
+              <div className="flex items-center gap-1">
+                {FEATURE_ICONS.map(({ id, title, path }) => {
+                  const active = activePanel === id
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => active ? closePanel() : openPanel(id)}
+                      title={title}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                      style={{
+                        background: active ? 'rgba(201,162,39,0.15)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${active ? 'rgba(201,162,39,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                        color: active ? '#C9A227' : 'rgba(255,255,255,0.4)',
+                      }}
+                    >
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d={path} />
+                      </svg>
+                    </button>
+                  )
+                })}
+
+                {/* Privacy toggle — adviser only */}
+                {user?.role === Role.ADVISER && (
+                  <button
+                    onClick={togglePrivacy}
+                    title={privacyMode ? 'Privacy mode on — click to reveal' : 'Enable privacy mode'}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                    style={{
+                      background: privacyMode ? 'rgba(201,162,39,0.15)' : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${privacyMode ? 'rgba(201,162,39,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                      color: privacyMode ? '#C9A227' : 'rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      {privacyMode ? (
+                        <path d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                      ) : (
+                        <>
+                          <path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                          <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </>
+                      )}
+                    </svg>
+                  </button>
+                )}
+
+                <div className="w-px h-4 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              </div>
             )}
 
             {/* AI chat toggle — star icon */}

@@ -3,8 +3,10 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/layout/AuthContext'
 import { ChatPanelProvider } from '@/components/layout/ChatPanelContext'
+import { FeaturePanelProvider } from '@/components/layout/FeaturePanelContext'
 import Navbar from '@/components/layout/Navbar'
 import ChatPanel from '@/components/layout/ChatPanel'
+import FeaturePanel from '@/components/layout/FeaturePanel'
 import MainLayout from '@/components/layout/MainLayout'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -25,9 +27,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} bg-[#080808] text-white min-h-screen`}>
         <AuthProvider>
           <ChatPanelProvider>
-            <Navbar />
-            <ChatPanel />
-            <MainLayout>{children}</MainLayout>
+            <FeaturePanelProvider>
+              <Navbar />
+              <ChatPanel />
+              <FeaturePanel />
+              <MainLayout>{children}</MainLayout>
+            </FeaturePanelProvider>
           </ChatPanelProvider>
         </AuthProvider>
       </body>
