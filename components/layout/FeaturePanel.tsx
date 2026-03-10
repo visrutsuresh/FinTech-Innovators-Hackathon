@@ -7,7 +7,7 @@ import BlackSwanTester from '@/components/BlackSwanTester'
 import FlashLiquidityScorecard from '@/components/FlashLiquidityScorecard'
 import LegacyReadiness from '@/components/LegacyReadiness'
 
-const PANEL_WIDTH = 420
+export const FEATURE_PANEL_WIDTH = 420
 
 const PANEL_META: Record<FeaturePanelId, { title: string; subtitle: string; iconPath: string }> = {
   blackswan: {
@@ -37,14 +37,14 @@ export default function FeaturePanel() {
       {activePanel && clientCtx && (
         <motion.div
           key={activePanel}
-          initial={{ x: PANEL_WIDTH, opacity: 0.5 }}
+          initial={{ x: FEATURE_PANEL_WIDTH, opacity: 0.5 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: PANEL_WIDTH, opacity: 0 }}
+          exit={{ x: FEATURE_PANEL_WIDTH, opacity: 0 }}
           transition={{ type: 'spring', damping: 30, stiffness: 280 }}
           className="fixed right-0 bottom-0 z-40 flex flex-col"
           style={{
             top: 56,
-            width: PANEL_WIDTH,
+            width: FEATURE_PANEL_WIDTH,
             background: '#0C0C0C',
             borderLeft: '1px solid rgba(255,255,255,0.07)',
             boxShadow: '-16px 0 48px rgba(0,0,0,0.5)',
