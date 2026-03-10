@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useAuth, Role } from './AuthContext'
 import { useChatPanel } from './ChatPanelContext'
@@ -34,6 +34,8 @@ export default function Navbar() {
   const { isOpen, toggle } = useChatPanel()
   const { activePanel, clientCtx, privacyMode, openPanel, closePanel, togglePrivacy } = useFeaturePanel()
   const router = useRouter()
+  const pathname = usePathname()
+  const onProfile = pathname === '/profile'
 
   const handleLogout = async () => {
     await logout()
@@ -157,6 +159,22 @@ export default function Navbar() {
                 <div className="w-px h-4 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
               </div>
             )}
+
+            {/* Profile link */}
+            <button
+              onClick={() => router.push('/profile')}
+              title="My Profile"
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+              style={{
+                background: onProfile ? 'rgba(201,162,39,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${onProfile ? 'rgba(201,162,39,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                color: onProfile ? '#C9A227' : 'rgba(255,255,255,0.4)',
+              }}
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            </button>
 
             {/* AI chat toggle — star icon */}
             <button
