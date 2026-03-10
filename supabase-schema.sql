@@ -59,6 +59,12 @@ CREATE POLICY "own assets write"    ON assets     FOR ALL USING (
   portfolio_id IN (SELECT id FROM portfolios WHERE client_id = auth.uid())
 );
 
+-- ── Username (unique handle for nominations & adviser search) ──
+-- Run once after initial schema creation. Safe to re-run (IF NOT EXISTS / IF NOT EXISTS).
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
+-- Fast lookup by username (case already stored as lowercase at app level)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username);
+
 -- ── Portfolio Templates (starter dashboards by risk profile) ───
 -- Copy into new user portfolios for instant populated dashboard
 CREATE TABLE IF NOT EXISTS portfolio_templates (

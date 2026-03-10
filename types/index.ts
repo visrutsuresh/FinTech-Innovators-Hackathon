@@ -57,6 +57,7 @@ export interface Client {
   wellnessScore?: WellnessScore
   adviserId?: string
   investorProfile?: string
+  username?: string
 }
 
 export interface Adviser {
@@ -66,6 +67,7 @@ export interface Adviser {
   password: string
   role: Role.ADVISER
   clientIds: string[]
+  username?: string
 }
 
 export type User = Client | Adviser
