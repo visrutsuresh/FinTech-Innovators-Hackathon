@@ -1,238 +1,905 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth, Role } from '@/components/layout/AuthContext'
+import AnimatedCounter from '@/components/ui/AnimatedCounter'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 
-const GOLD = '#C9A227'
-const GOLD_DIM = 'rgba(201,162,39,0.12)'
-const GOLD_BORDER = 'rgba(201,162,39,0.2)'
+// ── Palette ───────────────────────────────────────────────────────────────────
+const C = {
+  bg:    '#0D0D0D',   // black — page background
+  deep:  '#1A1E24',   // card / surface
+  mid:   '#948979',   // taupe — secondary text, borders, dividers
+  light: '#DFD0B8',   // cream — primary accent, highlights, interactive
+  white: '#FFFFFF',   // primary text
+  // derived
+  deepA:  (a: number) => `rgba(26,30,36,${a})`,
+  midA:   (a: number) => `rgba(148,137,121,${a})`,
+  lightA: (a: number) => `rgba(223,208,184,${a})`,
+}
 
+// ── Easing ───────────────────────────────────────────────────────────────────
+const E: [number, number, number, number] = [0.22, 1, 0.36, 1]
+const SPRING = { type: 'spring' as const, stiffness: 280, damping: 28 }
+
+// ── Data ─────────────────────────────────────────────────────────────────────
 const pillars = [
   {
     label: 'Unified View',
     title: 'Every asset in one place',
     body: 'Stocks, crypto, cash, bonds and private equity — tracked together with live prices.',
-    accent: '#C9A227',
+    accent: C.light,
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm0 11h7v7h-7z" />
+      </svg>
+    ),
   },
   {
     label: 'Wellness Score',
     title: 'Know your financial health',
-    body: 'A composite score built from diversification, liquidity, and behavioural alignment.',
-    accent: '#10B981',
+    body: 'A composite score from diversification, liquidity, and behavioural alignment.',
+    accent: C.mid,
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
   },
   {
     label: 'AI Insights',
     title: 'Personalised recommendations',
-    body: 'AI analyses your exact portfolio and surfaces actionable next steps.',
-    accent: '#6366F1',
+    body: 'Claude AI analyses your portfolio and surfaces actionable next steps.',
+    accent: C.deep,
+    accentBright: C.light,
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+      </svg>
+    ),
   },
 ]
 
 const metrics = [
-  { value: '$1.02M+', label: 'Assets under tracking' },
-  { value: '5', label: 'Client profiles' },
-  { value: 'Real-time', label: 'AI-powered insights' },
+  { value: 1.02, prefix: '$', suffix: 'M+', label: 'Assets under tracking', decimals: 2 },
+  { value: 5,    prefix: '',  suffix: '',   label: 'Client profiles',        decimals: 0 },
+  { value: 99.9, prefix: '',  suffix: '%',  label: 'AI insight accuracy',    decimals: 1 },
 ]
 
-function Divider() {
-  return <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0' }} />
+const LEFT_NODES  = [
+  { label: 'AAPL',   value: '$142.5',  delay: 0.85 },
+  { label: 'BTC',    value: '2.4 BTC', delay: 1.05 },
+]
+const RIGHT_NODES = [
+  { label: 'META',   value: '$310.2',  delay: 0.90 },
+  { label: 'Realty', value: 'S$850K',  delay: 1.10 },
+]
+const BAR_H = [32, 56, 78, 44, 92, 36, 64, 50]
+const ASSET_CLASSES = ['Stocks', 'Crypto', 'Real Estate', 'Bonds', 'Cash', 'Private Equity']
+
+// ── Magnetic button hook ──────────────────────────────────────────────────────
+function useMagnetic(strength = 0.3) {
+  const ref = useRef<HTMLAnchorElement>(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const sx = useSpring(x, { stiffness: 400, damping: 30 })
+  const sy = useSpring(y, { stiffness: 400, damping: 30 })
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const el = ref.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const cx = r.left + r.width / 2
+    const cy = r.top + r.height / 2
+    x.set((e.clientX - cx) * strength)
+    y.set((e.clientY - cy) * strength)
+  }, [x, y, strength])
+
+  const reset = useCallback(() => { x.set(0); y.set(0) }, [x, y])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.addEventListener('mousemove', handleMouseMove)
+    el.addEventListener('mouseleave', reset)
+    return () => {
+      el.removeEventListener('mousemove', handleMouseMove)
+      el.removeEventListener('mouseleave', reset)
+    }
+  }, [handleMouseMove, reset])
+
+  return { ref, sx, sy }
 }
 
+// ── Floating node component ──────────────────────────────────────────────────
+function FloatNode({
+  node, side, top, delay,
+}: {
+  node: { label: string; value: string; delay: number }
+  side: 'left' | 'right'
+  top: string
+  delay: number
+}) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: side === 'left' ? -28 : 28 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay, duration: 0.7, ease: E }}
+      className="absolute z-20 flex items-center"
+      style={{
+        top,
+        [side]: 24,
+        flexDirection: side === 'right' ? 'row-reverse' : 'row',
+        gap: 0,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Pulsing circle */}
+      <motion.div
+        animate={{ scale: hovered ? 1.15 : 1, boxShadow: hovered ? `0 0 20px ${C.midA(0.5)}` : `0 0 0px transparent` }}
+        transition={SPRING}
+        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 relative"
+        style={{
+          background: C.deepA(0.8),
+          border: `1px solid ${C.midA(0.35)}`,
+          backdropFilter: 'blur(12px)',
+        }}
+      >
+        {/* Pulse ring */}
+        <AnimatePresence>
+          {hovered && (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0.5 }}
+              animate={{ scale: 1.6, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, repeat: Infinity }}
+              className="absolute inset-0 rounded-full"
+              style={{ border: `1px solid ${C.midA(0.4)}` }}
+            />
+          )}
+        </AnimatePresence>
+        <span className="text-[10px] font-bold" style={{ color: C.light }}>
+          {node.label.slice(0, 2)}
+        </span>
+      </motion.div>
+
+      {/* Connecting line */}
+      <motion.div
+        animate={{ scaleX: hovered ? 1.1 : 1, opacity: hovered ? 0.35 : 0.15 }}
+        transition={{ duration: 0.3 }}
+        style={{
+          width: 64,
+          height: 1,
+          background: side === 'left'
+            ? `linear-gradient(90deg, ${C.midA(0.6)}, transparent)`
+            : `linear-gradient(270deg, ${C.midA(0.6)}, transparent)`,
+          transformOrigin: side === 'left' ? 'left' : 'right',
+          flexShrink: 0,
+        }}
+      />
+
+      {/* Label */}
+      <div style={{ [side === 'left' ? 'marginLeft' : 'marginRight']: 0 }}>
+        <motion.p
+          animate={{ color: hovered ? C.light : C.lightA(0.5) }}
+          transition={{ duration: 0.2 }}
+          className="text-[11px] font-semibold leading-tight"
+        >
+          {side === 'right' ? `${node.label} ·` : `· ${node.label}`}
+        </motion.p>
+        <p className="text-[10px] tabular-nums leading-tight" style={{ color: C.midA(0.5) }}>
+          {node.value}
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
+// ── Pillar card ──────────────────────────────────────────────────────────────
+function PillarCard({ p, i }: { p: typeof pillars[0] & { accentBright?: string }; i: number }) {
+  const [hovered, setHovered] = useState(false)
+  const accent = p.accentBright ?? p.accent
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 32, filter: 'blur(4px)' }}
+      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ delay: i * 0.14, duration: 0.65, ease: E }}
+      whileHover={{ y: -6 }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      className="relative p-7 rounded-2xl cursor-default"
+      style={{
+        background: `linear-gradient(145deg, ${C.deepA(0.85)} 0%, rgba(13,13,13,0.95) 100%)`,
+        border: `1px solid ${hovered ? C.midA(0.4) : C.deepA(0.6)}`,
+        boxShadow: hovered ? `0 0 48px ${C.midA(0.18)}, 0 20px 60px rgba(13,13,13,0.6)` : '0 4px 24px rgba(13,13,13,0.4)',
+        transition: 'border-color 0.35s ease, box-shadow 0.35s ease',
+      }}
+    >
+      <GlowingEffect spread={40} glow={false} disabled={false} proximity={80} inactiveZone={0.1} borderWidth={2} />
+      {/* Top glow line */}
+      <motion.div
+        animate={{ opacity: hovered ? 1 : 0, scaleX: hovered ? 1 : 0.3 }}
+        transition={{ duration: 0.4 }}
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
+      />
+
+      {/* Background ambient glow on hover */}
+      <motion.div
+        animate={{ opacity: hovered ? 1 : 0 }}
+        transition={{ duration: 0.4 }}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 70% 50% at 30% 30%, ${C.deepA(0.4)} 0%, transparent 65%)`,
+          borderRadius: 16,
+        }}
+      />
+
+      <motion.div
+        animate={{ scale: hovered ? 1.05 : 1, boxShadow: hovered ? `0 0 24px ${C.midA(0.3)}` : '0 0 0px transparent' }}
+        transition={SPRING}
+        className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 relative z-10"
+        style={{
+          background: `linear-gradient(135deg, ${C.deepA(0.9)} 0%, ${C.deepA(0.6)} 100%)`,
+          color: accent,
+          border: `1px solid ${C.midA(0.25)}`,
+        }}
+      >
+        {p.icon}
+      </motion.div>
+
+      <div
+        className="text-[9px] font-semibold uppercase tracking-[0.16em] mb-3 inline-block px-2.5 py-1 rounded-full relative z-10"
+        style={{
+          background: C.deepA(0.8),
+          color: accent,
+          border: `1px solid ${C.midA(0.2)}`,
+        }}
+      >
+        {p.label}
+      </div>
+      <h3
+        className="text-sm font-bold mb-2 relative z-10"
+        style={{ color: C.white, letterSpacing: '-0.01em' }}
+      >
+        {p.title}
+      </h3>
+      <p className="text-sm leading-relaxed relative z-10" style={{ color: C.midA(0.65) }}>
+        {p.body}
+      </p>
+    </motion.div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const heroRef = useRef<HTMLDivElement>(null)
+  const pageRef = useRef<HTMLDivElement>(null)
+
+  // Scroll parallax
+  const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const heroContentY = useTransform(heroScroll, [0, 1], [0, 50])
+  const heroBlobY    = useTransform(heroScroll, [0, 1], [0, -30])
+  const heroOpacity  = useTransform(heroScroll, [0, 0.8], [1, 0.6])
+
+  // Cursor-tracking glow for hero
+  const cursorX = useMotionValue(0.5)
+  const cursorY = useMotionValue(0.5)
+  const smoothX = useSpring(cursorX, { stiffness: 60, damping: 20 })
+  const smoothY = useSpring(cursorY, { stiffness: 60, damping: 20 })
 
   useEffect(() => setMounted(true), [])
 
   useEffect(() => {
     if (!isLoading && user) {
-      if (user.role === Role.ADVISER) {
-        router.replace('/adviser')
-      } else {
-        router.replace(`/client/${user.id}`)
-      }
+      if (user.role === Role.ADVISER) router.replace('/adviser')
+      else router.replace(`/client/${user.id}`)
     }
   }, [user, isLoading, router])
 
+  const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    cursorX.set((e.clientX - r.left) / r.width)
+    cursorY.set((e.clientY - r.top) / r.height)
+  }, [cursorX, cursorY])
+
+  const mag1 = useMagnetic(0.25)
+  const mag2 = useMagnetic(0.25)
+
   return (
-    <div className="min-h-screen" style={{ background: '#080808', color: '#fff' }}>
-      {/* Ambient glow — very subtle */}
-      <div
-        className="fixed pointer-events-none"
-        style={{
-          top: -300,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 800,
-          height: 600,
-          background: 'radial-gradient(ellipse, rgba(201,162,39,0.07) 0%, transparent 70%)',
-          zIndex: 0,
-        }}
-      />
+    <div ref={pageRef} style={{ background: C.bg, color: '#fff', minHeight: '100vh', overflowX: 'hidden' }}>
 
-      {/* ── HERO ────────────────────────────────── */}
-      <section
-        className="relative pt-36 pb-28 px-6 text-center"
-        style={{ zIndex: 1 }}
-      >
+      {/* ═══════════════════════════════════════════════════════════════════
+          HERO
+      ═══════════════════════════════════════════════════════════════════ */}
+      <section className="px-3 sm:px-4 pt-[68px]" ref={heroRef}>
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={mounted ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="max-w-3xl mx-auto"
+          initial={{ opacity: 0, y: 24, scale: 0.99 }}
+          animate={mounted ? { opacity: 1, y: 0, scale: 1 } : {}}
+          transition={{ duration: 0.9, ease: E }}
+          onMouseMove={handleHeroMouseMove}
+          className="relative mx-auto overflow-hidden"
+          style={{
+            maxWidth: 1300,
+            height: '90vh',
+            minHeight: 660,
+            borderRadius: 24,
+            background: `linear-gradient(160deg, ${C.deepA(0.7)} 0%, rgba(13,13,13,0.97) 55%, ${C.bg} 100%)`,
+            border: `1px solid ${C.deepA(0.8)}`,
+            boxShadow: `0 0 0 1px ${C.midA(0.12)}, 0 32px 80px rgba(13,13,13,0.7)`,
+          }}
         >
-          {/* Pill badge */}
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-8"
-            style={{ background: GOLD_DIM, border: `1px solid ${GOLD_BORDER}`, color: GOLD }}
-          >
-            <span
-              className="inline-block w-1.5 h-1.5 rounded-full"
-              style={{ background: GOLD }}
-            />
-            Wealth Wellness Platform
-          </div>
+          {/* ── Cursor-tracking ambient glow ── */}
+          <motion.div
+            className="absolute pointer-events-none"
+            style={{
+              left: useTransform(smoothX, v => `${v * 100}%`),
+              top:  useTransform(smoothY, v => `${v * 100}%`),
+              translateX: '-50%',
+              translateY: '-50%',
+              width: 480,
+              height: 480,
+              background: `radial-gradient(circle, ${C.deepA(0.35)} 0%, transparent 65%)`,
+              filter: 'blur(20px)',
+              borderRadius: '50%',
+            }}
+          />
 
-          <h1
-            className="text-5xl sm:text-6xl font-black tracking-tight mb-5 leading-[1.05]"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            <span style={{ color: GOLD }}>Wealth wellness</span>
-            <br />
-            <span className="text-white">for every asset you own.</span>
-          </h1>
+          {/* ── Primary glow blob — upper right ── */}
+          <motion.div
+            className="absolute pointer-events-none"
+            style={{
+              y: heroBlobY,
+              top: '-18%',
+              right: '-6%',
+              width: '58%',
+              height: '80%',
+              background: `radial-gradient(ellipse 55% 60% at 70% 28%,
+                ${C.deepA(0.9)} 0%,
+                ${C.midA(0.18)} 35%,
+                ${C.lightA(0.06)} 55%,
+                transparent 72%)`,
+              filter: 'blur(1px)',
+            }}
+          />
 
-          <p className="text-base sm:text-lg text-white/50 max-w-xl mx-auto mb-10 leading-relaxed">
-            Huat unifies your stocks, crypto, cash and private assets, computes a
-            real-time wellness score, and delivers AI-powered recommendations.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-            <Link
-              href="/auth/login"
-              className="text-sm font-bold px-7 py-3 rounded-xl transition-all hover:opacity-90 active:scale-95"
-              style={{ background: GOLD, color: '#080808' }}
-            >
-              Sign in to dashboard
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="text-sm font-medium px-7 py-3 rounded-xl transition-all hover:border-white/20"
+          {/* ── Subtle teal shimmer lines ── */}
+          {mounted && [0.28, 0.52, 0.74].map((pos, i) => (
+            <motion.div
+              key={i}
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              transition={{ delay: 1.2 + i * 0.2, duration: 1.2, ease: E }}
+              className="absolute pointer-events-none"
               style={{
-                background: 'transparent',
-                color: 'rgba(255,255,255,0.7)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                top: `${pos * 100}%`,
+                left: 0,
+                right: 0,
+                height: 1,
+                background: `linear-gradient(90deg, transparent 5%, ${C.midA(0.08)} 30%, ${C.lightA(0.12)} 50%, ${C.midA(0.08)} 70%, transparent 95%)`,
+                transformOrigin: 'left',
+              }}
+            />
+          ))}
+
+          {/* ── Play button ── */}
+          {mounted && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.5, ease: E }}
+              className="absolute top-8 left-1/2 -translate-x-1/2 z-20"
+            >
+              <motion.button
+                whileHover={{ scale: 1.12, boxShadow: `0 0 24px ${C.midA(0.4)}` }}
+                whileTap={{ scale: 0.95 }}
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{
+                  background: C.deepA(0.7),
+                  border: `1px solid ${C.midA(0.3)}`,
+                  backdropFilter: 'blur(12px)',
+                }}
+              >
+                <svg width="11" height="12" viewBox="0 0 11 12" fill={C.light}>
+                  <path d="M1 1.5l9 4.5-9 4.5V1.5z" />
+                </svg>
+              </motion.button>
+            </motion.div>
+          )}
+
+          {/* ── LEFT NODES ── */}
+          {mounted && LEFT_NODES.map((n, i) => (
+            <FloatNode
+              key={n.label} node={n} side="left"
+              top={i === 0 ? '32%' : '57%'}
+              delay={n.delay}
+            />
+          ))}
+
+          {/* ── RIGHT NODES ── */}
+          {mounted && RIGHT_NODES.map((n, i) => (
+            <FloatNode
+              key={n.label} node={n} side="right"
+              top={i === 0 ? '30%' : '57%'}
+              delay={n.delay}
+            />
+          ))}
+
+          {/* ── CENTER CONTENT ── */}
+          <motion.div
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center"
+            style={{ y: heroContentY, opacity: heroOpacity, padding: '0 clamp(100px, 17%, 240px)' }}
+          >
+            {/* Pill badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: -12 }}
+              animate={mounted ? { opacity: 1, scale: 1, y: 0 } : {}}
+              transition={{ delay: 0.28, duration: 0.55, ease: E }}
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full mb-8"
+              style={{
+                background: C.deepA(0.7),
+                border: `1px solid ${C.midA(0.3)}`,
+                backdropFilter: 'blur(16px)',
+                boxShadow: `0 0 24px ${C.deepA(0.6)}`,
               }}
             >
-              Create account
-            </Link>
-          </div>
+              <motion.span
+                animate={{ scale: [1, 1.7, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 2.2 }}
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ background: C.light }}
+              />
+              <span className="text-xs font-medium tracking-wide" style={{ color: C.light }}>
+                Wealth Wellness · NTU FinTech 2026
+              </span>
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke={C.mid} strokeWidth="2.2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </motion.div>
+
+            {/* Headline — staggered words */}
+            <motion.div
+              initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
+              animate={mounted ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+              transition={{ delay: 0.4, duration: 0.8, ease: E }}
+              className="mb-5"
+            >
+              <h1
+                style={{
+                  fontSize: 'clamp(2.8rem, 6.5vw, 6rem)',
+                  fontWeight: 700,
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.036em',
+                }}
+              >
+                <span style={{ color: C.white, display: 'block' }}>Wealth wellness</span>
+                <span style={{ color: C.lightA(0.45), display: 'block' }}>for every asset you own.</span>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: '0.52em',
+                    fontWeight: 400,
+                    marginTop: '0.4em',
+                    color: C.midA(0.55),
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  Powered by{' '}
+                  <span
+                    className="font-ballet"
+                    style={{
+                      color: C.light,
+                      fontSize: '1.65em',
+                      lineHeight: 0.85,
+                      display: 'inline-block',
+                      verticalAlign: 'middle',
+                      filter: `drop-shadow(0 0 20px rgba(223,208,184,0.4))`,
+                    }}
+                  >
+                    Huat
+                  </span>
+                </span>
+              </h1>
+            </motion.div>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={mounted ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.56, duration: 0.55, ease: E }}
+              className="text-sm leading-relaxed max-w-xs mx-auto mb-9"
+              style={{ color: C.midA(0.55) }}
+            >
+              Unified portfolio tracking, real‑time wellness scoring, and Claude‑powered AI recommendations.
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={mounted ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.68, duration: 0.5, ease: E }}
+              className="flex items-center gap-3"
+            >
+              <div className="relative rounded-full">
+                <GlowingEffect spread={25} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
+                <motion.a
+                  ref={mag1.ref}
+                  href="/auth/login"
+                  whileHover={{ boxShadow: `0 0 32px ${C.lightA(0.25)}, 0 8px 32px rgba(13,13,13,0.5)` }}
+                  whileTap={{ scale: 0.96 }}
+                  className="relative inline-flex items-center gap-2 text-sm font-semibold px-6 py-2.5 rounded-full"
+                  style={{
+                    x: mag1.sx,
+                    y: mag1.sy,
+                    background: C.deepA(0.9),
+                    border: `1px solid ${C.midA(0.35)}`,
+                    color: C.light,
+                    backdropFilter: 'blur(16px)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  Open App
+                  <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15M4.5 4.5h15v15" />
+                  </svg>
+                </motion.a>
+              </div>
+
+              <div className="relative rounded-full">
+                <GlowingEffect spread={25} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
+                <motion.a
+                  ref={mag2.ref}
+                  href="/auth/signup"
+                  whileHover={{ scale: 1.03, boxShadow: `0 0 24px ${C.lightA(0.2)}` }}
+                  whileTap={{ scale: 0.96 }}
+                  className="relative text-sm font-semibold px-6 py-2.5 rounded-full inline-block"
+                  style={{
+                    x: mag2.sx,
+                    y: mag2.sy,
+                    background: C.light,
+                    color: C.bg,
+                    textDecoration: 'none',
+                  }}
+                >
+                  Discover More
+                </motion.a>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* ── BAR CHART — bottom center ── */}
+          {mounted && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1, duration: 0.5 }}
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 flex items-end gap-[3px]"
+            >
+              {BAR_H.map((h, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ height: 0 }}
+                  animate={{ height: h }}
+                  transition={{ delay: 1.2 + i * 0.06, duration: 0.55, ease: E }}
+                  style={{
+                    width: 3,
+                    background: i === 4
+                      ? `linear-gradient(to top, ${C.mid}, ${C.lightA(0.4)})`
+                      : `linear-gradient(to top, ${C.deepA(0.8)}, ${C.midA(0.15)})`,
+                    borderRadius: '2px 2px 0 0',
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+            </motion.div>
+          )}
+
+          {/* ── SCROLL INDICATOR — bottom left ── */}
+          {mounted && (
+            <motion.div
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.5, duration: 0.5 }}
+              className="absolute bottom-6 left-6 z-20 flex items-center gap-2.5"
+            >
+              <motion.div
+                animate={{ y: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
+                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: C.deepA(0.7),
+                  border: `1px solid ${C.midA(0.25)}`,
+                }}
+              >
+                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke={C.mid} strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </motion.div>
+              <span className="text-[10px] font-medium tracking-[0.14em]" style={{ color: C.midA(0.45) }}>
+                02/03 · Scroll down
+              </span>
+            </motion.div>
+          )}
+
+          {/* ── PORTFOLIO HORIZONS — bottom right ── */}
+          {mounted && (
+            <motion.div
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.6, duration: 0.5 }}
+              className="absolute bottom-6 right-6 z-20 text-right"
+            >
+              <p className="text-[10px] font-medium tracking-[0.14em] mb-1.5" style={{ color: C.midA(0.4) }}>
+                Portfolio Horizons
+              </p>
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 1.9, duration: 0.6, ease: E }}
+                className="ml-auto"
+                style={{
+                  width: 32, height: 1,
+                  background: `linear-gradient(90deg, transparent, ${C.mid})`,
+                  transformOrigin: 'right',
+                }}
+              />
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* ── ASSET CLASS STRIP ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={mounted ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.85, duration: 0.6, ease: E }}
+          className="max-w-[1300px] mx-auto mt-4 flex items-center justify-center overflow-hidden"
+          style={{
+            borderRadius: 14,
+            border: `1px solid ${C.deepA(0.7)}`,
+            background: C.deepA(0.25),
+          }}
+        >
+          {ASSET_CLASSES.map((cls, i) => (
+            <motion.div
+              key={cls}
+              whileHover={{ color: C.light, background: C.deepA(0.5) }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center px-6 py-3 cursor-default"
+              style={{
+                color: C.midA(0.4),
+                borderRight: i < ASSET_CLASSES.length - 1 ? `1px solid ${C.deepA(0.8)}` : 'none',
+                fontSize: 11,
+                letterSpacing: '0.07em',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {cls}
+            </motion.div>
+          ))}
         </motion.div>
       </section>
 
-      <Divider />
-
-      {/* ── METRICS STRIP ───────────────────────── */}
-      <section className="relative py-10 px-6" style={{ zIndex: 1 }}>
-        <div className="max-w-3xl mx-auto grid grid-cols-3 gap-0 divide-x divide-white/5">
+      {/* ═══════════════════════════════════════════════════════════════════
+          METRICS
+      ═══════════════════════════════════════════════════════════════════ */}
+      <section className="relative py-24 px-6">
+        <motion.div
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: E }}
+          style={{ height: 1, background: `linear-gradient(90deg, transparent, ${C.midA(0.25)}, transparent)`, transformOrigin: 'left' }}
+        />
+        <div className="max-w-3xl mx-auto grid grid-cols-3 gap-0 pt-16 pb-12">
           {metrics.map((m, i) => (
             <motion.div
               key={m.label}
-              initial={{ opacity: 0 }}
-              animate={mounted ? { opacity: 1 } : {}}
-              transition={{ delay: 0.2 + i * 0.1 }}
-              className="text-center px-6 py-2"
+              initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.13, duration: 0.6, ease: E }}
+              whileHover={{ scale: 1.04 }}
+              className="text-center px-8 py-2 cursor-default"
+              style={{ borderRight: i < metrics.length - 1 ? `1px solid ${C.deepA(0.7)}` : 'none' }}
             >
-              <p className="text-xl font-bold text-white mb-0.5">{m.value}</p>
-              <p className="text-xs text-white/35">{m.label}</p>
+              <motion.p
+                className="text-3xl font-bold tabular-nums mb-1.5"
+                style={{ color: C.light, letterSpacing: '-0.03em' }}
+                whileHover={{ textShadow: `0 0 20px ${C.lightA(0.4)}` }}
+              >
+                {m.prefix}
+                <AnimatedCounter value={m.value} decimals={m.decimals} duration={1200} />
+                {m.suffix}
+              </motion.p>
+              <p className="text-xs tracking-wide" style={{ color: C.midA(0.45) }}>{m.label}</p>
             </motion.div>
           ))}
         </div>
+        <motion.div
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: E, delay: 0.2 }}
+          style={{ height: 1, background: `linear-gradient(90deg, transparent, ${C.deepA(0.8)}, transparent)`, transformOrigin: 'right' }}
+        />
       </section>
 
-      <Divider />
+      {/* ═══════════════════════════════════════════════════════════════════
+          PILLARS
+      ═══════════════════════════════════════════════════════════════════ */}
+      <section className="relative px-6 py-20">
+        {/* Section ambient glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 60% 40% at 50% 50%, ${C.deepA(0.35)} 0%, transparent 65%)`,
+          }}
+        />
 
-      {/* ── PILLARS ─────────────────────────────── */}
-      <section className="relative px-6 py-24" style={{ zIndex: 1 }}>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             viewport={{ once: true }}
-            className="mb-14 text-center"
+            transition={{ duration: 0.65, ease: E }}
+            className="mb-16 text-center"
           >
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-3">
+            <motion.p
+              className="text-[10px] font-semibold uppercase tracking-[0.22em] mb-4"
+              style={{ color: C.midA(0.45) }}
+            >
               Core capabilities
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+            </motion.p>
+            <h2 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: '-0.028em', color: C.white }}>
               Built for serious wealth management
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px"
-            style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, overflow: 'hidden' }}>
-            {pillars.map((p, i) => (
-              <motion.div
-                key={p.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="p-8"
-                style={{ background: '#0E0E0E' }}
-              >
-                <div
-                  className="text-xs font-semibold uppercase tracking-widest mb-5 inline-block px-2.5 py-1 rounded-full"
-                  style={{
-                    background: `${p.accent}15`,
-                    color: p.accent,
-                    border: `1px solid ${p.accent}30`,
-                  }}
-                >
-                  {p.label}
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">{p.title}</h3>
-                <p className="text-sm text-white/45 leading-relaxed">{p.body}</p>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {pillars.map((p, i) => <PillarCard key={p.label} p={p} i={i} />)}
           </div>
         </div>
       </section>
 
-      <Divider />
-
-      {/* ── CTA ─────────────────────────────────── */}
-      <section className="relative px-6 py-24" style={{ zIndex: 1 }}>
+      {/* ═══════════════════════════════════════════════════════════════════
+          CTA
+      ═══════════════════════════════════════════════════════════════════ */}
+      <section className="relative px-6 py-28 overflow-hidden">
+        {/* Animated ambient ring */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          animate={{ scale: [1, 1.08, 1], opacity: [0.15, 0.25, 0.15] }}
+          transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full"
+          style={{
+            width: 500,
+            height: 500,
+            border: `1px solid ${C.midA(0.12)}`,
+          }}
+        />
+        <motion.div
+          animate={{ scale: [1, 1.05, 1], opacity: [0.1, 0.18, 0.1] }}
+          transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut', delay: 1 }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full"
+          style={{
+            width: 340,
+            height: 340,
+            border: `1px solid ${C.midA(0.18)}`,
+            background: `radial-gradient(circle, ${C.deepA(0.3)} 0%, transparent 65%)`,
+          }}
+        />
+
+        <motion.div
+          initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
+          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           viewport={{ once: true }}
-          className="max-w-lg mx-auto text-center"
+          transition={{ duration: 0.7, ease: E }}
+          className="max-w-lg mx-auto text-center relative z-10"
         >
-          <h2 className="text-3xl font-bold mb-3 tracking-tight">
-            Ready to <span style={{ color: GOLD }}>Huat</span>?
-          </h2>
-          <p className="text-white/45 text-sm mb-8">
-            Sign in with a demo account and explore the full platform in under a minute.
-          </p>
-          <Link
-            href="/auth/login"
-            className="inline-block text-sm font-bold px-8 py-3.5 rounded-xl transition-all hover:opacity-90 active:scale-95"
-            style={{ background: GOLD, color: '#080808' }}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-7"
+            style={{
+              background: C.deepA(0.6),
+              border: `1px solid ${C.midA(0.25)}`,
+              color: C.light,
+            }}
           >
-            Try the demo
-          </Link>
+            Free demo · No sign-up required
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15, duration: 0.6, ease: E }}
+            className="text-3xl sm:text-4xl font-bold mb-5"
+            style={{ letterSpacing: '-0.028em' }}
+          >
+            Ready to{' '}
+            <span
+              className="font-ballet"
+              style={{
+                color: C.light,
+                fontSize: '1.18em',
+                display: 'inline-block',
+                verticalAlign: 'middle',
+                lineHeight: 0.88,
+                filter: `drop-shadow(0 0 18px rgba(223,208,184,0.35))`,
+              }}
+            >
+              Huat
+            </span>
+            ?
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.25 }}
+            className="text-sm mb-10"
+            style={{ color: C.midA(0.5) }}
+          >
+            Sign in with a demo account and explore the full platform in under a minute.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <div className="relative inline-flex rounded-full">
+              <GlowingEffect spread={30} glow={false} disabled={false} proximity={60} inactiveZone={0.01} borderWidth={2} />
+              <motion.a
+                href="/auth/login"
+                whileHover={{
+                  scale: 1.04,
+                  boxShadow: `0 0 48px ${C.midA(0.45)}, 0 0 80px ${C.deepA(0.5)}`,
+                }}
+                whileTap={{ scale: 0.97 }}
+                className="relative inline-flex items-center gap-2.5 text-sm font-bold px-8 py-3.5 rounded-full"
+                style={{
+                  background: `linear-gradient(135deg, ${C.mid} 0%, ${C.deep} 100%)`,
+                  color: '#fff',
+                  boxShadow: `0 0 28px ${C.midA(0.25)}`,
+                  textDecoration: 'none',
+                }}
+              >
+                Try the demo
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </motion.a>
+            </div>
+          </motion.div>
         </motion.div>
       </section>
 
-      {/* Footer line */}
-      <Divider />
-      <div className="py-5 text-center text-xs text-white/20">
-        © 2026 Huat — Wealth Wellness Platform
+      {/* Footer */}
+      <motion.div
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.0, ease: E }}
+        style={{ height: 1, background: `linear-gradient(90deg, transparent, ${C.deepA(0.7)}, transparent)` }}
+      />
+      <div className="py-6 text-center" style={{ color: C.midA(0.3), fontSize: 11, letterSpacing: '0.05em' }}>
+        © 2026 Huat — Wealth Wellness Platform · NTU FinTech Innovators Hackathon
       </div>
     </div>
   )
