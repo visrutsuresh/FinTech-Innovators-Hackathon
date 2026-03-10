@@ -22,10 +22,12 @@ export function calculateDiversificationScore(portfolio: Portfolio): number {
   // HHI ranges from 1/n (perfect) to 1 (fully concentrated)
   // Convert to 0-100 score: lower HHI = higher score
   const n = Object.keys(classValues).length
-  const minHHI = n > 0 ? 1 / n : 1
-  const normalizedHHI = (hhi - minHHI) / (1 - minHHI + 0.0001)
+  if (n <= 1) return 0 // Single asset class = no diversification
+  const minHHI = 1 / n
+  // When n > 1, minHHI < 1, so denominator is always positive
+  const normalizedHHI = (hhi - minHHI) / (1 - minHHI)
   const score = Math.round((1 - normalizedHHI) * 100)
-  return Math.max(0, Math.min(100, score))
+  return Math.max(0, Math.min(100, isFinite(score) ? score : 0))
 }
 
 export function calculateLiquidityScore(portfolio: Portfolio): number {
@@ -102,9 +104,8 @@ export function calculateWellnessScore(
   const liquidity = calculateLiquidityScore(portfolio)
   const behavioral = calculateBehavioralResilienceScore(portfolio, riskProfile)
 
-  const overall = Math.round(
-    diversification * 0.4 + liquidity * 0.35 + behavioral * 0.25
-  )
+  const rawOverall = diversification * 0.4 + liquidity * 0.35 + behavioral * 0.25
+  const overall = isFinite(rawOverall) ? Math.round(rawOverall) : 0
 
   return {
     overall,

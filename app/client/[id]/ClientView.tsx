@@ -150,10 +150,11 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
   }, [client])
 
   useEffect(() => {
+    if (manageOpen) return // Pause refresh while user is editing to avoid stale state on save
     refreshPrices() // Fetch live prices on mount (server skips to speed initial load)
     const interval = setInterval(refreshPrices, REFRESH_INTERVAL_MS)
     return () => clearInterval(interval)
-  }, [refreshPrices])
+  }, [refreshPrices, manageOpen])
 
   const handleManualRefresh = async () => {
     setRefreshing(true)
@@ -202,8 +203,19 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
 
       const valid = editAssets.filter(a => {
         if (!a.name.trim()) return false
-        return PRICE_TRACKED.includes(a.assetClass) ? parseFloat(a.quantity) > 0 : parseFloat(a.value) >= 0
+        if (PRICE_TRACKED.includes(a.assetClass)) {
+          const qty = parseFloat(a.quantity)
+          return !isNaN(qty) && qty > 0
+        }
+        const val = parseFloat(a.value)
+        return !isNaN(val) && val >= 0
       })
+
+      if (valid.length === 0) {
+        setSaveError('Add at least one asset with a valid name and value before saving.')
+        setSaving(false)
+        return
+      }
 
       await supabase.from('assets').delete().eq('portfolio_id', portfolioData.id)
 
@@ -283,7 +295,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
   const riskColor = RISK_COLOR[client.riskProfile] ?? '#C9A227'
   const editManualTotal = editAssets
     .filter(a => !PRICE_TRACKED.includes(a.assetClass))
-    .reduce((s, a) => s + parseFloat(a.value || '0'), 0)
+    .reduce((s, a) => s + (parseFloat(a.value) || 0), 0)
   const editLiveCount = editAssets.filter(a => PRICE_TRACKED.includes(a.assetClass) && parseFloat(a.quantity) > 0).length
 
   return (

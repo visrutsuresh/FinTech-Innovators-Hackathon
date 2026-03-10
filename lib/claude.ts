@@ -101,7 +101,7 @@ Use your judgement. Answer the user's actual question accurately.`
     return {
       type: parsed.type ?? 'recommendations',
       message: parsed.message ?? '',
-      recommendations: parsed.recommendations ?? [],
+      recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
       summary: parsed.summary ?? '',
       marketContext: parsed.marketContext ?? '',
     }

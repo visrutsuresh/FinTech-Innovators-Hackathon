@@ -24,12 +24,13 @@ export default function AdviserPage() {
 
   useEffect(() => {
     if (!user || user.role !== Role.ADVISER) return
+    const adviserId = user.id
 
     async function loadClients() {
       setClientsLoading(true)
       try {
         // Single query: fetch only this adviser's clients with their portfolio + assets embedded
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
             id, name, email, role, risk_profile, investor_profile, adviser_id,
@@ -41,8 +42,14 @@ export default function AdviserPage() {
               )
             )
           `)
-          .eq('adviser_id', user!.id)
+          .eq('adviser_id', adviserId)
           .eq('role', 'client')
+
+        if (profilesError) {
+          console.error('Failed to load clients:', profilesError.message)
+          setClients([])
+          return
+        }
 
         if (!profiles?.length) { setClients([]); setClientsLoading(false); return }
 
