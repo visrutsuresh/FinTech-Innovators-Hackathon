@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFeaturePanel, type FeaturePanelId } from './FeaturePanelContext'
+import { useAuth, Role } from './AuthContext'
 import BlackSwanTester from '@/components/BlackSwanTester'
 import FlashLiquidityScorecard from '@/components/FlashLiquidityScorecard'
 import LegacyReadiness from '@/components/LegacyReadiness'
@@ -16,6 +17,8 @@ const PANEL_META: Record<FeaturePanelId, { title: string; subtitle: string }> = 
 
 export default function FeaturePanel() {
   const { activePanel, clientCtx, closePanel } = useFeaturePanel()
+  const { user } = useAuth()
+  const isAdviser = user?.role === Role.ADVISER
 
   return (
     <AnimatePresence>
@@ -67,7 +70,7 @@ export default function FeaturePanel() {
               <FlashLiquidityScorecard portfolio={clientCtx.portfolio} />
             )}
             {activePanel === 'legacy' && (
-              <LegacyReadiness clientId={clientCtx.clientId} />
+              <LegacyReadiness clientId={clientCtx.clientId} isAdviser={isAdviser} />
             )}
           </div>
         </motion.div>

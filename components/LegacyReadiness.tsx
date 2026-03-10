@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabase'
 
 interface CheckItem {
   id: string
@@ -19,27 +20,30 @@ const ITEMS: CheckItem[] = [
 
 interface Props {
   clientId: string
+  isAdviser?: boolean
 }
 
-export default function LegacyReadiness({ clientId }: Props) {
-  const storageKey = `legacy_${clientId}`
+export default function LegacyReadiness({ clientId, isAdviser = false }: Props) {
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) setChecked(JSON.parse(saved))
-    } catch {
-      // ignore
-    }
-    setMounted(true)
-  }, [storageKey])
+    supabase
+      .from('profiles')
+      .select('legacy_checklist')
+      .eq('id', clientId)
+      .single()
+      .then(({ data }) => {
+        if (data?.legacy_checklist) setChecked(data.legacy_checklist as Record<string, boolean>)
+        setMounted(true)
+      })
+  }, [clientId])
 
   const toggle = (id: string) => {
+    if (isAdviser) return
     setChecked(prev => {
       const next = { ...prev, [id]: !prev[id] }
-      try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch { /* ignore */ }
+      supabase.from('profiles').update({ legacy_checklist: next }).eq('id', clientId).then(() => {})
       return next
     })
   }
@@ -83,51 +87,88 @@ export default function LegacyReadiness({ clientId }: Props) {
             {score === ITEMS.length ? 'Fully Prepared' : score >= 3 ? 'Partially Prepared' : 'Action Required'}
           </p>
           <p className="text-[10px] text-white/35 leading-snug mt-0.5">
-            {score === ITEMS.length
-              ? 'Your estate planning is complete.'
-              : `Complete ${ITEMS.length - score} more item${ITEMS.length - score !== 1 ? 's' : ''} to secure your legacy.`}
+            {isAdviser
+              ? 'Client-managed checklist'
+              : score === ITEMS.length
+                ? 'Your estate planning is complete.'
+                : `Complete ${ITEMS.length - score} more item${ITEMS.length - score !== 1 ? 's' : ''} to secure your legacy.`}
           </p>
         </div>
       </div>
 
-      {/* Checklist */}
-      <div className="space-y-1.5">
-        {ITEMS.map((item, i) => (
-          <motion.button
-            key={item.id}
-            onClick={() => toggle(item.id)}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.06 }}
-            className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-all"
-            style={{
-              background: checked[item.id] ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
-              border: checked[item.id] ? '1px solid rgba(16,185,129,0.18)' : '1px solid rgba(255,255,255,0.06)',
-            }}
-          >
-            {/* Checkbox */}
-            <div
-              className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
+      {/* Adviser view — anonymous tick indicators only */}
+      {isAdviser ? (
+        <div className="space-y-1.5">
+          {ITEMS.map((item, i) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.06 }}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5"
               style={{
-                background: checked[item.id] ? '#10B981' : 'rgba(255,255,255,0.06)',
-                border: checked[item.id] ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                background: checked[item.id] ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+                border: checked[item.id] ? '1px solid rgba(16,185,129,0.18)' : '1px solid rgba(255,255,255,0.06)',
               }}
             >
-              {checked[item.id] && (
-                <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 6l3 3 5-5" stroke="#080808" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </div>
-            <div className="min-w-0">
+              <div
+                className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: checked[item.id] ? '#10B981' : 'rgba(255,255,255,0.06)',
+                  border: checked[item.id] ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                }}
+              >
+                {checked[item.id] && (
+                  <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6l3 3 5-5" stroke="#080808" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
               <p className="text-xs font-medium" style={{ color: checked[item.id] ? '#10B981' : 'rgba(255,255,255,0.75)' }}>
                 {item.label}
               </p>
-              <p className="text-[10px] text-white/30 leading-tight mt-0.5">{item.description}</p>
-            </div>
-          </motion.button>
-        ))}
-      </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        /* Client view — full labels + interactive */
+        <div className="space-y-1.5">
+          {ITEMS.map((item, i) => (
+            <motion.button
+              key={item.id}
+              onClick={() => toggle(item.id)}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.06 }}
+              className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-all"
+              style={{
+                background: checked[item.id] ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+                border: checked[item.id] ? '1px solid rgba(16,185,129,0.18)' : '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              <div
+                className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
+                style={{
+                  background: checked[item.id] ? '#10B981' : 'rgba(255,255,255,0.06)',
+                  border: checked[item.id] ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                }}
+              >
+                {checked[item.id] && (
+                  <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6l3 3 5-5" stroke="#080808" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium" style={{ color: checked[item.id] ? '#10B981' : 'rgba(255,255,255,0.75)' }}>
+                  {item.label}
+                </p>
+                <p className="text-[10px] text-white/30 leading-tight mt-0.5">{item.description}</p>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
