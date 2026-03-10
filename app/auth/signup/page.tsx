@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Role, RiskProfile, AssetClass } from '@/types'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 
 const GOLD = '#C9A227'
 
@@ -349,7 +350,8 @@ export default function SignupPage() {
           {/* ── Step 1: Basic info ── */}
           {step === 'info' && (
             <motion.div key="info" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
-              <div className="rounded-2xl p-6" style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="relative rounded-2xl p-6" style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <GlowingEffect spread={50} glow={false} disabled={false} proximity={100} inactiveZone={0.05} borderWidth={2} />
                 <form onSubmit={handleInfoSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-white/40 mb-1.5">Full name</label>
@@ -418,21 +420,27 @@ export default function SignupPage() {
                     <label className="block text-xs font-medium text-white/40 mb-2">I am a</label>
                     <div className="grid grid-cols-2 gap-2">
                       {[{ value: Role.CLIENT, label: 'Client', sub: 'View my portfolio' }, { value: Role.ADVISER, label: 'Adviser', sub: 'Manage clients' }].map(r => (
-                        <button key={r.value} type="button" onClick={() => setRole(r.value)}
-                          className="p-3 rounded-xl text-left transition-all"
-                          style={{ background: role === r.value ? 'rgba(201,162,39,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${role === r.value ? 'rgba(201,162,39,0.3)' : 'rgba(255,255,255,0.07)'}` }}>
-                          <p className="text-sm font-semibold" style={{ color: role === r.value ? GOLD : 'rgba(255,255,255,0.7)' }}>{r.label}</p>
-                          <p className="text-xs text-white/35 mt-0.5">{r.sub}</p>
-                        </button>
+                        <div key={r.value} className="relative rounded-xl">
+                          <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                          <button type="button" onClick={() => setRole(r.value)}
+                            className="relative w-full p-3 rounded-xl text-left transition-all"
+                            style={{ background: role === r.value ? 'rgba(201,162,39,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${role === r.value ? 'rgba(201,162,39,0.3)' : 'rgba(255,255,255,0.07)'}` }}>
+                            <p className="text-sm font-semibold" style={{ color: role === r.value ? GOLD : 'rgba(255,255,255,0.7)' }}>{r.label}</p>
+                            <p className="text-xs text-white/35 mt-0.5">{r.sub}</p>
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </div>
                   {error && <p className="text-xs text-red-400">{error}</p>}
-                  <button type="submit" disabled={loading}
-                    className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50 mt-1"
-                    style={{ background: GOLD, color: '#080808' }}>
-                    {loading ? 'Creating…' : role === Role.CLIENT ? 'Continue' : 'Create account'}
-                  </button>
+                  <div className="relative rounded-xl mt-1">
+                    <GlowingEffect spread={30} glow={false} disabled={false} proximity={60} inactiveZone={0.01} borderWidth={2} />
+                    <button type="submit" disabled={loading}
+                      className="relative w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                      style={{ background: GOLD, color: '#080808' }}>
+                      {loading ? 'Creating…' : role === Role.CLIENT ? 'Continue' : 'Create account'}
+                    </button>
+                  </div>
                 </form>
               </div>
               <p className="text-center text-xs text-white/30 mt-5">
@@ -454,17 +462,21 @@ export default function SignupPage() {
                   <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(qIndex / QUESTIONS.length) * 100}%`, background: GOLD }} />
                 </div>
               </div>
-              <div className="rounded-2xl p-6" style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="relative rounded-2xl p-6" style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <GlowingEffect spread={50} glow={false} disabled={false} proximity={100} inactiveZone={0.05} borderWidth={2} />
                 <p className="text-sm font-semibold text-white mb-5 leading-snug">{question.q}</p>
                 <div className="space-y-2.5">
                   {question.options.map((opt, i) => (
-                    <button key={i} onClick={() => handleAnswer(opt.score)}
-                      className="w-full text-left px-4 py-3 rounded-xl text-sm text-white/70 transition-all hover:text-white"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(201,162,39,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,162,39,0.25)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)' }}>
-                      {opt.label}
-                    </button>
+                    <div key={i} className="relative rounded-xl">
+                      <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+                      <button onClick={() => handleAnswer(opt.score)}
+                        className="relative w-full text-left px-4 py-3 rounded-xl text-sm text-white/70 transition-all hover:text-white"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(201,162,39,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,162,39,0.25)' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)' }}>
+                        {opt.label}
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -479,7 +491,8 @@ export default function SignupPage() {
           {/* ── Step 3: Result ── */}
           {step === 'result' && profile && (
             <motion.div key="result" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
-              <div className="rounded-2xl p-6 text-center" style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="relative rounded-2xl p-6 text-center" style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <GlowingEffect spread={50} glow={false} disabled={false} proximity={100} inactiveZone={0.05} borderWidth={2} />
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(201,162,39,0.1)', border: '1px solid rgba(201,162,39,0.2)' }}>
                   <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={GOLD} strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -498,18 +511,24 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="space-y-2.5">
-                  <button onClick={() => setStep('assets')}
-                    className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                    style={{ background: GOLD, color: '#080808' }}>
-                    Add my assets
-                  </button>
-                  <button
-                    onClick={() => handleComplete(true)}
-                    disabled={loading}
-                    className="w-full py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-90 border"
-                    style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.2)' }}>
-                    {loading ? 'Setting up…' : 'Start with sample portfolio — jump straight in'}
-                  </button>
+                  <div className="relative rounded-xl">
+                    <GlowingEffect spread={30} glow={false} disabled={false} proximity={60} inactiveZone={0.01} borderWidth={2} />
+                    <button onClick={() => setStep('assets')}
+                      className="relative w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+                      style={{ background: GOLD, color: '#080808' }}>
+                      Add my assets
+                    </button>
+                  </div>
+                  <div className="relative rounded-xl">
+                    <GlowingEffect spread={25} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
+                    <button
+                      onClick={() => handleComplete(true)}
+                      disabled={loading}
+                      className="relative w-full py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-90 border"
+                      style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.2)' }}>
+                      {loading ? 'Setting up…' : 'Start with sample portfolio — jump straight in'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -527,7 +546,8 @@ export default function SignupPage() {
                 </svg>
                 Back
               </button>
-              <div className="rounded-2xl p-5" style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="relative rounded-2xl p-5" style={{ background: '#0E0E0E', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <GlowingEffect spread={50} glow={false} disabled={false} proximity={100} inactiveZone={0.05} borderWidth={2} />
 
                 <div className="space-y-2.5 mb-3">
                   {assetRows.map((row) => {
@@ -609,17 +629,23 @@ export default function SignupPage() {
 
                 {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
 
-                <button onClick={() => handleComplete(false)} disabled={loading || validRows.length === 0}
-                  className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40"
-                  style={{ background: GOLD, color: '#080808' }}>
-                  {loading ? 'Setting up your dashboard…' : 'Enter my dashboard'}
-                </button>
+                <div className="relative rounded-xl">
+                  <GlowingEffect spread={30} glow={false} disabled={false} proximity={60} inactiveZone={0.01} borderWidth={2} />
+                  <button onClick={() => handleComplete(false)} disabled={loading || validRows.length === 0}
+                    className="relative w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-40"
+                    style={{ background: GOLD, color: '#080808' }}>
+                    {loading ? 'Setting up your dashboard…' : 'Enter my dashboard'}
+                  </button>
+                </div>
               </div>
 
-              <button onClick={() => handleComplete(true)} disabled={loading}
-                className="block mx-auto mt-4 text-xs text-white/25 hover:text-white/50 transition-colors">
-                Skip for now
-              </button>
+              <div className="relative rounded-lg mx-auto w-fit mt-4">
+                <GlowingEffect spread={15} glow={false} disabled={false} proximity={30} inactiveZone={0.01} borderWidth={1} />
+                <button onClick={() => handleComplete(true)} disabled={loading}
+                  className="relative text-xs text-white/25 hover:text-white/50 transition-colors px-2 py-1 rounded-lg">
+                  Skip for now
+                </button>
+              </div>
             </motion.div>
           )}
 
