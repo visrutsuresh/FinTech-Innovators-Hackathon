@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth, Role } from '@/components/layout/AuthContext'
 
 const GOLD = '#C9A227'
 const GOLD_DIM = 'rgba(201,162,39,0.12)'
@@ -41,7 +43,20 @@ function Divider() {
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+
   useEffect(() => setMounted(true), [])
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      if (user.role === Role.ADVISER) {
+        router.replace('/adviser')
+      } else {
+        router.replace(`/client/${user.id}`)
+      }
+    }
+  }, [user, isLoading, router])
 
   return (
     <div className="min-h-screen" style={{ background: '#080808', color: '#fff' }}>
