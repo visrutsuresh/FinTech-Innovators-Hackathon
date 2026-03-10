@@ -1,6 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { WellnessScore } from '@/types'
 import { getScoreColor } from '@/lib/utils'
 
@@ -30,23 +31,31 @@ function IconBehavioral({ color }: { color: string }) {
   )
 }
 
-const breakdownItems = [
+type BreakdownKey = 'diversification' | 'liquidity' | 'behavioral'
+
+const breakdownItems: Array<{
+  key: BreakdownKey
+  label: string
+  Icon: ({ color }: { color: string }) => JSX.Element
+  weight: string
+  description: string
+}> = [
   {
-    key: 'diversification' as const,
+    key: 'diversification',
     label: 'Diversification',
     Icon: IconDiversification,
     weight: '40%',
     description: 'Spread across asset classes, measured via the Herfindahl-Hirschman Index. Lower concentration = higher score.',
   },
   {
-    key: 'liquidity' as const,
+    key: 'liquidity',
     label: 'Liquidity',
     Icon: IconLiquidity,
     weight: '35%',
     description: 'Ratio of assets convertible to cash without major loss — stocks, crypto, bonds and cash all count.',
   },
   {
-    key: 'behavioral' as const,
+    key: 'behavioral',
     label: 'Behavioural Alignment',
     Icon: IconBehavioral,
     weight: '25%',
@@ -54,59 +63,154 @@ const breakdownItems = [
   },
 ]
 
-export default function ScoreBreakdown({ score }: ScoreBreakdownProps) {
+function BreakdownCardContent({
+  item,
+  value,
+  color,
+  compact = false,
+}: {
+  item: (typeof breakdownItems)[number]
+  value: number
+  color: string
+  compact?: boolean
+}) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      {breakdownItems.map((item, i) => {
-        const value = score[item.key]
-        const color = getScoreColor(value)
-        return (
-          <motion.div
-            key={item.key}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.09, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-xl p-4"
-            style={{
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.05)',
-            }}
+    <>
+      <div className={`flex items-center justify-between ${compact ? 'mb-3' : 'mb-4'}`}>
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`rounded-lg flex items-center justify-center ${compact ? 'w-7 h-7' : 'w-10 h-10'}`}
+            style={{ background: `${color}14` }}
           >
-            {/* Header row */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: `${color}14` }}
-                >
-                  <item.Icon color={color} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>{item.label}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--text-caption)' }}>Weight: {item.weight}</p>
-                </div>
-              </div>
-              <span className="text-xl font-bold tabular-nums" style={{ color }}>
-                {value}
-              </span>
-            </div>
+            <item.Icon color={color} />
+          </div>
+          <div>
+            <p className={`font-semibold ${compact ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255,255,255,0.9)' }}>{item.label}</p>
+            <p className={compact ? 'text-[10px]' : 'text-xs'} style={{ color: 'var(--text-caption)' }}>Weight: {item.weight}</p>
+          </div>
+        </div>
+        <span className={`font-bold tabular-nums ${compact ? 'text-xl' : 'text-2xl'}`} style={{ color }}>
+          {value}
+        </span>
+      </div>
+      <div className={`rounded-full overflow-hidden ${compact ? 'h-1 mb-3' : 'h-2 mb-4'}`} style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <motion.div
+          className="h-full rounded-full"
+          style={{ background: `linear-gradient(90deg, ${color}aa, ${color})` }}
+          initial={{ width: 0 }}
+          animate={{ width: `${value}%` }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
+      <p className={`leading-relaxed ${compact ? 'text-xs' : 'text-sm'}`} style={{ color: 'var(--text-muted)' }}>{item.description}</p>
+    </>
+  )
+}
 
-            {/* Bar */}
-            <div className="h-1 rounded-full mb-3 overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+export default function ScoreBreakdown({ score }: ScoreBreakdownProps) {
+  const [peekItem, setPeekItem] = useState<(typeof breakdownItems)[number] | null>(null)
+
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {breakdownItems.map((item, i) => {
+          const value = score[item.key]
+          const color = getScoreColor(value)
+          return (
+            <motion.button
+              type="button"
+              key={item.key}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.09, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              onClick={() => setPeekItem(item)}
+              className="rounded-xl p-4 w-full text-left cursor-pointer transition-all hover:border-opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080808]"
+              style={{
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.025)'
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'
+              }}
+            >
+              <BreakdownCardContent item={item} value={value} color={color} compact />
+            </motion.button>
+          )
+        })}
+      </div>
+
+      {/* Center peek modal */}
+      <AnimatePresence>
+        {peekItem && (() => {
+          const value = score[peekItem.key]
+          const color = getScoreColor(value)
+          return (
+            <>
               <motion.div
-                className="h-full rounded-full"
-                style={{ background: `linear-gradient(90deg, ${color}aa, ${color})` }}
-                initial={{ width: 0 }}
-                animate={{ width: `${value}%` }}
-                transition={{ duration: 0.9, delay: 0.25 + i * 0.09, ease: [0.22, 1, 0.36, 1] }}
+                key="score-peek-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-50"
+                style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
+                onClick={() => setPeekItem(null)}
+                aria-hidden
               />
-            </div>
-
-            {/* Description */}
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.description}</p>
-          </motion.div>
-        )
-      })}
-    </div>
+              <motion.div
+                key={`score-peek-${peekItem.key}`}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="score-peek-title"
+                initial={{ opacity: 0, scale: 0.94 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 p-4"
+                onClick={e => e.stopPropagation()}
+              >
+                <div
+                  className="rounded-2xl p-6 shadow-2xl"
+                  style={{
+                    background: '#111111',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+                  }}
+                >
+                  <div className="flex items-center justify-end mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setPeekItem(null)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+                        e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+                        e.currentTarget.style.color = 'rgba(255,255,255,0.5)'
+                      }}
+                      aria-label="Close"
+                    >
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div id="score-peek-title" className="sr-only">{peekItem.label}</div>
+                  <BreakdownCardContent item={peekItem} value={value} color={color} />
+                </div>
+              </motion.div>
+            </>
+          )
+        })()}
+      </AnimatePresence>
+    </>
   )
 }
