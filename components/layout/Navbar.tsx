@@ -28,6 +28,7 @@ export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const onProfile = pathname === '/profile'
+  const onAuthPage = pathname?.startsWith('/auth')
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -51,7 +52,23 @@ export default function Navbar() {
   const onAdviserDashboard = pathname === '/adviser'
   const onClientDashboard  = !!user?.id && pathname === `/client/${user.id}`
 
+  // Derive the "home" dashboard URL for the current user
+  const dashboardUrl = user?.role === Role.ADVISER ? '/adviser' : `/client/${user?.id}`
+
+  // Profile click: if already on profile, go back to dashboard; otherwise navigate to /profile
+  const handleProfileClick = useCallback(() => {
+    if (onProfile) router.push(dashboardUrl)
+    else router.push('/profile')
+  }, [onProfile, dashboardUrl, router])
+
   // ── Tab definitions ──────────────────────────────────────────────────────────
+
+  // When on the profile page — show only Dashboard + Profile (no feature panels)
+  const profilePageTabs: TabItem[] = useMemo(() => [
+    { title: 'Dashboard', icon: Home, onClick: () => router.push(dashboardUrl) },
+    { type: 'separator' },
+    { title: 'Profile', icon: User, onClick: handleProfileClick },
+  ], [dashboardUrl, handleProfileClick, router])
 
   // ADVISER viewing a specific client (always show Home → back to /adviser)
   const adviserClientTabs: TabItem[] = useMemo(() => [
@@ -61,19 +78,19 @@ export default function Navbar() {
     { title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') },
     { type: 'separator' },
     { title: 'Privacy',    icon: privacyMode ? EyeOff : Eye, onClick: togglePrivacy },
-    { title: 'Profile',    icon: User,         onClick: () => router.push('/profile') },
+    { title: 'Profile',    icon: User,         onClick: handleProfileClick },
     { title: 'AI Adviser', icon: Sparkles,     onClick: toggleChat },
-  ], [togglePanel, privacyMode, togglePrivacy, toggleChat])
+  ], [togglePanel, privacyMode, togglePrivacy, handleProfileClick, toggleChat])
 
   // ADVISER overview — omit Home when already on /adviser
   const adviserTabs: TabItem[] = useMemo(() => {
     const items: TabItem[] = []
     if (!onAdviserDashboard) items.push({ title: 'Dashboard', icon: Home, onClick: () => router.push('/adviser') })
     items.push({ type: 'separator' })
-    items.push({ title: 'Profile',    icon: User,     onClick: () => router.push('/profile') })
+    items.push({ title: 'Profile',    icon: User,     onClick: handleProfileClick })
     items.push({ title: 'AI Adviser', icon: Sparkles, onClick: toggleChat })
     return items
-  }, [onAdviserDashboard, toggleChat])
+  }, [onAdviserDashboard, handleProfileClick, toggleChat])
 
   // CLIENT — omit Home when already on their own dashboard
   const clientTabs: TabItem[] = useMemo(() => {
@@ -83,14 +100,15 @@ export default function Navbar() {
     items.push({ title: 'Liquidity',  icon: Zap,          onClick: () => togglePanel('flash') })
     items.push({ title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') })
     items.push({ type: 'separator' })
-    items.push({ title: 'Profile',    icon: User,         onClick: () => router.push('/profile') })
+    items.push({ title: 'Profile',    icon: User,         onClick: handleProfileClick })
     items.push({ title: 'AI Adviser', icon: Sparkles,     onClick: toggleChat })
     return items
-  }, [onClientDashboard, user?.id, togglePanel, toggleChat])
+  }, [onClientDashboard, user?.id, togglePanel, handleProfileClick, toggleChat])
 
   // tabs must be declared before activeIndex (which reads it)
   const tabs =
-    user?.role === Role.ADVISER && clientCtx ? adviserClientTabs
+    onProfile                                 ? profilePageTabs
+    : user?.role === Role.ADVISER && clientCtx ? adviserClientTabs
     : user?.role === Role.ADVISER             ? adviserTabs
     : user?.role === Role.CLIENT              ? clientTabs
     : null
@@ -179,7 +197,7 @@ export default function Navbar() {
             <LogOut size={13} strokeWidth={1.8} />
             <span className="hidden sm:block">Sign out</span>
           </motion.button>
-        ) : (
+        ) : !onAuthPage ? (
           <>
             <Link
               href="/auth/login"
@@ -201,7 +219,7 @@ export default function Navbar() {
               </Link>
             </div>
           </>
-        )}
+        ) : null}
       </div>
     </motion.nav>
   )

@@ -8,13 +8,21 @@ import { useAuth } from '@/components/layout/AuthContext'
 import { Role } from '@/types'
 import { GlowingEffect } from '@/components/ui/glowing-effect'
 
-const GOLD = '#C9A227'
+const C = {
+  bg:    '#0D0D0D',
+  deep:  '#1A1E24',
+  mid:   '#948979',
+  light: '#DFD0B8',
+  deepA:  (a: number) => `rgba(26,30,36,${a})`,
+  midA:   (a: number) => `rgba(148,137,121,${a})`,
+  lightA: (a: number) => `rgba(223,208,184,${a})`,
+}
 
 const DEMO_ACCOUNTS = [
-  { email: 'adviser@demo.com', label: 'David Koh', role: 'Adviser', initials: 'DK', accent: '#457B9D' },
-  { email: 'alex@demo.com', label: 'Alex Chen', role: 'Aggressive', initials: 'AC', accent: '#EF4444' },
-  { email: 'sarah@demo.com', label: 'Sarah Lim', role: 'Moderate', initials: 'SL', accent: '#C9A227' },
-  { email: 'raymond@demo.com', label: 'Raymond Wong', role: 'Conservative', initials: 'RW', accent: '#10B981' },
+  { email: 'adviser@demo.com', label: 'David Koh', role: 'Adviser', initials: 'DK', accent: '#7BAEC4' },
+  { email: 'alex@demo.com', label: 'Alex Chen', role: 'Aggressive', initials: 'AC', accent: '#EF7A7A' },
+  { email: 'sarah@demo.com', label: 'Sarah Lim', role: 'Moderate', initials: 'SL', accent: '#DFD0B8' },
+  { email: 'raymond@demo.com', label: 'Raymond Wong', role: 'Conservative', initials: 'RW', accent: '#6EC4A5' },
 ]
 
 export default function LoginPage() {
@@ -52,16 +60,16 @@ export default function LoginPage() {
   }
 
   const inputStyle = (field: string) => ({
-    background: 'rgba(255,255,255,0.04)',
-    border: `1px solid ${focusedField === field ? 'rgba(201,162,39,0.4)' : 'rgba(255,255,255,0.08)'}`,
+    background: C.deepA(0.6),
+    border: `1px solid ${focusedField === field ? C.lightA(0.4) : C.midA(0.18)}`,
     transition: 'border-color 0.2s ease',
-    boxShadow: focusedField === field ? '0 0 0 3px rgba(201,162,39,0.08)' : 'none',
+    boxShadow: focusedField === field ? `0 0 0 3px ${C.lightA(0.08)}` : 'none',
   })
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-10"
-      style={{ background: '#080808' }}
+      className="min-h-screen flex flex-col items-center justify-start px-4 pt-16 pb-10"
+      style={{ background: C.bg }}
     >
       {/* Background ambient */}
       <div
@@ -70,9 +78,9 @@ export default function LoginPage() {
           top: '30%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 600,
-          height: 400,
-          background: 'radial-gradient(ellipse, rgba(201,162,39,0.06) 0%, transparent 70%)',
+          width: 700,
+          height: 500,
+          background: `radial-gradient(ellipse, ${C.midA(0.1)} 0%, ${C.deepA(0.4)} 40%, transparent 70%)`,
           zIndex: 0,
         }}
       />
@@ -84,20 +92,20 @@ export default function LoginPage() {
         className="w-full max-w-md relative z-10"
       >
         {/* Logo + heading */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2.5 mb-7 group">
+        <div className="text-center mb-4">
+          <Link href="/" className="inline-flex items-center gap-2 mb-3 group">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black transition-transform group-hover:scale-105"
-              style={{ background: GOLD, color: '#080808' }}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black transition-transform group-hover:scale-105"
+              style={{ background: C.light, color: C.bg }}
             >
               H
             </div>
-            <span className="font-ballet text-lg text-white" style={{ lineHeight: 1 }}>Huat</span>
+            <span className="font-ballet text-sm text-white" style={{ lineHeight: 1 }}>Huat</span>
           </Link>
-          <h1 className="text-2xl font-bold text-white tracking-tight mb-1.5" style={{ letterSpacing: '-0.02em' }}>
+          <h1 className="text-xl font-bold text-white tracking-tight mb-0.5" style={{ letterSpacing: '-0.02em' }}>
             Welcome back
           </h1>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.38)' }}>
+          <p className="text-xs" style={{ color: C.midA(0.6) }}>
             Sign in to your wealth dashboard
           </p>
         </div>
@@ -106,9 +114,9 @@ export default function LoginPage() {
         <div
           className="relative rounded-2xl overflow-hidden"
           style={{
-            background: '#0F0F0F',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+            background: `linear-gradient(145deg, ${C.deepA(0.9)} 0%, rgba(13,13,13,0.97) 100%)`,
+            border: `1px solid ${C.midA(0.2)}`,
+            boxShadow: `0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px ${C.midA(0.06)}`,
           }}
         >
           <GlowingEffect spread={50} glow={false} disabled={false} proximity={100} inactiveZone={0.05} borderWidth={2} />
@@ -116,7 +124,7 @@ export default function LoginPage() {
           <div className="p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium mb-2" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                <label className="block text-xs font-medium mb-2" style={{ color: C.midA(0.65) }}>
                   Email
                 </label>
                 <input
@@ -132,7 +140,7 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-2" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                <label className="block text-xs font-medium mb-2" style={{ color: C.midA(0.65) }}>
                   Password
                 </label>
                 <input
@@ -164,7 +172,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 className="relative w-full py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
-                style={{ background: GOLD, color: '#080808' }}
+                style={{ background: `linear-gradient(135deg, ${C.mid} 0%, ${C.deep} 100%)`, color: C.light, boxShadow: `0 0 24px ${C.midA(0.2)}` }}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -182,9 +190,9 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-3 px-6" style={{ marginTop: -4 }}>
-            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
-            <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>or try a demo account</span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
+            <div className="flex-1 h-px" style={{ background: C.midA(0.12) }} />
+            <span className="text-xs" style={{ color: C.midA(0.4) }}>or try a demo account</span>
+            <div className="flex-1 h-px" style={{ background: C.midA(0.12) }} />
           </div>
 
           {/* Demo accounts */}
@@ -197,14 +205,14 @@ export default function LoginPage() {
                   onClick={() => handleQuickLogin(d.email)}
                   disabled={loading}
                   className="relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all disabled:opacity-50"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  style={{ background: C.deepA(0.5), border: `1px solid ${C.midA(0.14)}` }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.055)'
-                    e.currentTarget.style.borderColor = `${d.accent}30`
+                    e.currentTarget.style.background = C.deepA(0.8)
+                    e.currentTarget.style.borderColor = `${d.accent}40`
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
+                    e.currentTarget.style.background = C.deepA(0.5)
+                    e.currentTarget.style.borderColor = C.midA(0.14)
                   }}
                 >
                   <div
@@ -214,10 +222,10 @@ export default function LoginPage() {
                     {d.initials}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-white/85">{d.label}</p>
-                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.32)' }}>{d.role}</p>
+                    <p className="text-xs font-semibold" style={{ color: C.light }}>{d.label}</p>
+                    <p className="text-xs" style={{ color: C.midA(0.5) }}>{d.role}</p>
                   </div>
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.2)" strokeWidth="2">
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={C.midA(0.35)} strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -226,18 +234,25 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        <div
+          className="mt-3 rounded-2xl px-6 py-3.5 text-center text-xs"
+          style={{
+            background: `linear-gradient(145deg, ${C.deepA(0.85)} 0%, rgba(13,13,13,0.95) 100%)`,
+            border: `1px solid ${C.midA(0.16)}`,
+            color: C.midA(0.45),
+          }}
+        >
           No account?{' '}
           <Link
             href="/auth/signup"
-            className="transition-colors"
-            style={{ color: 'rgba(255,255,255,0.55)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#C9A227')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
+            className="transition-colors font-medium"
+            style={{ color: C.midA(0.75) }}
+            onMouseEnter={e => (e.currentTarget.style.color = C.light)}
+            onMouseLeave={e => (e.currentTarget.style.color = C.midA(0.75))}
           >
             Sign up free
           </Link>
-        </p>
+        </div>
       </motion.div>
     </div>
   )
