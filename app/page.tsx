@@ -7,7 +7,6 @@ import { useAuth } from '@/components/layout/AuthContext'
 
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
 import { GlowingEffect } from '@/components/ui/glowing-effect'
-
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
   bg:    '#0D0D0D',   // black — page background
@@ -279,6 +278,61 @@ function PillarCard({ p, i }: { p: typeof pillars[0] & { accentBright?: string }
   )
 }
 
+// ── Trail border button ───────────────────────────────────────────────────────
+// bg="dark"  → charcoal fill + subtle star dots + slim cream line on border
+// bg="light" → cream fill + slim taupe line on border (no stars)
+function TrailBorderButton({
+  children, animDone, href, bg = 'light',
+}: {
+  children: React.ReactNode
+  animDone: boolean
+  href: string
+  bg?: 'dark' | 'light'
+}) {
+  const ref = useRef<HTMLAnchorElement>(null)
+  useEffect(() => {
+    if (ref.current) {
+      const el = ref.current
+      el.style.setProperty('--path', `path('M 0 0 H ${el.offsetWidth} V ${el.offsetHeight} H 0 V 0')`)
+    }
+  }, [])
+
+  const isDark = bg === 'dark'
+
+  return (
+    <a
+      ref={ref}
+      href={animDone ? href : undefined}
+      style={{
+        isolation: 'isolate',
+        background: isDark ? C.deepA(0.95) : C.light,
+        color: isDark ? C.lightA(0.8) : C.bg,
+        textDecoration: 'none',
+        pointerEvents: animDone ? 'auto' : 'none',
+        border: `1px solid ${isDark ? C.midA(0.25) : C.midA(0.2)}`,
+      } as React.CSSProperties}
+      className="relative z-[3] overflow-hidden text-base font-semibold px-10 py-4 rounded-full inline-flex items-center justify-center whitespace-nowrap"
+    >
+
+      {/* Star dots for dark variant */}
+      {isDark && (
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
+          <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 200 56" fill="none">
+            {[
+              [20, 14], [55, 38], [90, 10], [130, 32], [165, 18],
+              [38, 46], [108, 44], [150, 8], [185, 40], [72, 24],
+            ].map(([cx, cy], i) => (
+              <circle key={i} cx={cx} cy={cy} r="1.2" fill={C.lightA(0.35)} />
+            ))}
+          </svg>
+        </div>
+      )}
+
+      <span className="z-10 relative">{children}</span>
+    </a>
+  )
+}
+
 // ── Swing keyframes: 70-sample damped sine, x offset from natural position ────
 // Buttons stay in-flow the entire time — only their CSS transform is animated.
 // x starts at ±600 (off-screen), ends at 0 (natural position). No layout jump.
@@ -338,47 +392,32 @@ function AnimatedCTA({ mounted }: { mounted: boolean }) {
       animate={animDone ? { y: [0, -6, 0] } : {}}
       transition={animDone ? { y: { duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.2 } } : {}}
     >
-      {/* Sign in */}
-      <div className="relative rounded-full">
-        {animDone && <GlowingEffect spread={20} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />}
-        <motion.a
-          ref={mag1.ref}
+      {/* Sign in — dark bg + light stars + border trail */}
+      <motion.div
+        ref={mag1.ref}
+        style={{ x: cx1, y: cy1 }}
+        whileTap={animDone ? { scale: 0.97 } : {}}
+      >
+        <TrailBorderButton
+          animDone={animDone}
           href="/auth/login"
-          whileHover={animDone ? { color: C.white } : {}}
-          whileTap={animDone ? { scale: 0.97 } : {}}
-          className="relative text-base font-semibold px-10 py-4 rounded-full inline-block"
-          style={{
-            x: cx1, y: cy1,
-            color: C.midA(0.7),
-            border: `1px solid ${C.midA(0.3)}`,
-            textDecoration: 'none',
-            pointerEvents: animDone ? 'auto' : 'none',
-          }}
+          bg="dark"
         >
           Sign in
-        </motion.a>
-      </div>
+        </TrailBorderButton>
+      </motion.div>
 
-      {/* Get started */}
-      <div className="relative rounded-full">
-        {animDone && <GlowingEffect spread={20} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />}
-        <motion.a
-          ref={mag2.ref}
-          href="/auth/signup"
-          whileHover={animDone ? { scale: 1.03, boxShadow: `0 0 24px ${C.lightA(0.2)}` } : {}}
-          whileTap={animDone ? { scale: 0.96 } : {}}
-          className="relative text-base font-semibold px-10 py-4 rounded-full inline-block"
-          style={{
-            x: cx2, y: cy2,
-            background: C.light,
-            color: C.bg,
-            textDecoration: 'none',
-            pointerEvents: animDone ? 'auto' : 'none',
-          }}
-        >
+      {/* Get started — cream fill + border trail only */}
+      <motion.div
+        ref={mag2.ref}
+        style={{ x: cx2, y: cy2 }}
+        whileHover={animDone ? { scale: 1.03 } : {}}
+        whileTap={animDone ? { scale: 0.96 } : {}}
+      >
+        <TrailBorderButton animDone={animDone} href="/auth/signup" bg="light">
           Get started
-        </motion.a>
-      </div>
+        </TrailBorderButton>
+      </motion.div>
     </motion.div>
   )
 }
