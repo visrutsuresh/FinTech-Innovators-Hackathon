@@ -22,37 +22,30 @@ const AuthContext = createContext<AuthState>({
 // Fetch the full app user (Client or Adviser) from Supabase using the browser client.
 // Subject to RLS — user must be authenticated.
 async function fetchUserProfile(supabaseId: string): Promise<User | null> {
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', supabaseId)
-    .single()
+  // Fire all queries in parallel — only use the results relevant to the user's role
+  const [profileResult, portfolioResult, adviserClientsResult] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', supabaseId).single(),
+    supabase.from('portfolios').select('*, assets(*)').eq('client_id', supabaseId).single(),
+    supabase.from('profiles').select('id').eq('adviser_id', supabaseId),
+  ])
 
+  const { data: profile, error } = profileResult
   if (error || !profile) return null
 
   if (profile.role === 'adviser') {
-    const { data: clientProfiles } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('adviser_id', supabaseId)
-
     return {
       id: supabaseId,
       name: profile.name,
       email: profile.email,
       password: '',
       role: Role.ADVISER,
-      clientIds: clientProfiles?.map((c: { id: string }) => c.id) ?? [],
+      clientIds: adviserClientsResult.data?.map((c: { id: string }) => c.id) ?? [],
       username: profile.username ?? undefined,
     } as Adviser
   }
 
-  // Client — fetch portfolio with assets in one query (faster than 2 round trips)
-  const { data: portfolioRow } = await supabase
-    .from('portfolios')
-    .select('*, assets(*)')
-    .eq('client_id', supabaseId)
-    .single()
+  // Client — use the portfolio result fetched in parallel above
+  const { data: portfolioRow } = portfolioResult
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawAssets: any[] = (portfolioRow as { assets?: any[] } | null)?.assets ?? []
@@ -103,6 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // Pre-warm the Supabase DB connection so it's awake by the time the user clicks login.
+    // Supabase free-tier Postgres pauses after inactivity — this cheap query wakes it in the background.
+    supabase.from('profiles').select('id').limit(1).then(() => {})
+
     // Restore existing session on mount
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
