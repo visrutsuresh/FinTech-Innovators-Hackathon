@@ -7,6 +7,7 @@ import { useAuth } from '@/components/layout/AuthContext'
 import { Role, AssetClass } from '@/types'
 import type { Client, WellnessScore, Portfolio, Asset } from '@/types'
 import { calculateWellnessScore } from '@/lib/wellness'
+import { getArchetype } from '@/lib/archetypes'
 import { supabase } from '@/lib/supabase'
 import WealthWallet from '@/components/WealthWallet'
 import WellnessScorecard from '@/components/wellness/WellnessScorecard'
@@ -313,14 +314,12 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
               <h1 className="text-xl font-bold text-white tracking-tight">{client.name}</h1>
               <p className="text-xs text-white/35">{client.email}</p>
             </div>
-            {client.investorProfile && (
-              <span
-                className="text-xs font-medium px-2.5 py-1 rounded-full ml-1"
-                style={{ background: 'rgba(201,162,39,0.08)', color: '#C9A227', border: '1px solid rgba(201,162,39,0.2)' }}
-              >
-                {client.investorProfile}
-              </span>
-            )}
+            <span
+              className="text-xs font-medium px-2.5 py-1 rounded-full ml-1"
+              style={{ background: 'rgba(201,162,39,0.08)', color: '#C9A227', border: '1px solid rgba(201,162,39,0.2)' }}
+            >
+              {getArchetype(client.riskProfile)}
+            </span>
           </div>
 
           <div className="flex items-center gap-4">

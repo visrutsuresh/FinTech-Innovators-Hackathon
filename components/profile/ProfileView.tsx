@@ -8,6 +8,7 @@ import { Role, AssetClass } from '@/types'
 import type { Portfolio, Asset } from '@/types'
 import { supabase } from '@/lib/supabase'
 import WealthWallet from '@/components/WealthWallet'
+import { getArchetype } from '@/lib/archetypes'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -17,7 +18,7 @@ interface ProfileRow {
   email: string
   username?: string
   role?: string
-  investor_profile?: string
+  risk_profile?: string
 }
 
 interface AdviserRequest {
@@ -183,7 +184,7 @@ export default function ProfileView() {
       // Connected clients
       const { data: clients } = await supabase
         .from('profiles')
-        .select('id, name, email, username, investor_profile')
+        .select('id, name, email, username, risk_profile')
         .eq('adviser_id', user.id)
       setConnectedClients(clients ?? [])
 
@@ -437,7 +438,7 @@ export default function ProfileView() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const username = (user as any).username
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const investorProfile = (user as any).investorProfile
+  const riskProfile = (user as any).riskProfile
 
   const totalIncoming = incomingAdviserReqs.length + nokForMe.filter(n => n.status === 'pending').length
 
@@ -473,7 +474,7 @@ export default function ProfileView() {
                 >
                   {isAdviser ? 'Adviser' : 'Client'}
                 </span>
-                {!isAdviser && investorProfile && (
+                {!isAdviser && (
                   <span
                     className="text-xs font-medium px-2.5 py-1 rounded-full"
                     style={{
@@ -482,7 +483,7 @@ export default function ProfileView() {
                       border: `1px solid ${GOLD}25`,
                     }}
                   >
-                    {investorProfile}
+                    {getArchetype(riskProfile)}
                   </span>
                 )}
               </div>
@@ -529,9 +530,9 @@ export default function ProfileView() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              {c.investor_profile && (
+                              {c.risk_profile && (
                                 <span className="text-[10px]" style={{ color: GOLD }}>
-                                  {c.investor_profile}
+                                  {getArchetype(c.risk_profile)}
                                 </span>
                               )}
                               <button

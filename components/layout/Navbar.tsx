@@ -106,6 +106,14 @@ export default function Navbar() {
                 Dashboard
               </Link>
             )}
+            {user.role === Role.CLIENT && (
+              <Link
+                href={`/client/${user.id}`}
+                className="text-xs text-white/50 hover:text-white/90 transition-colors hidden sm:block"
+              >
+                Dashboard
+              </Link>
+            )}
 
             {/* Feature panel icons — only when a client page has registered its data */}
             {clientCtx && (
