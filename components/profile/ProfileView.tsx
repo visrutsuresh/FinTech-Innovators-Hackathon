@@ -9,6 +9,7 @@ import type { Portfolio, Asset } from '@/types'
 import { supabase } from '@/lib/supabase'
 import WealthWallet from '@/components/WealthWallet'
 import { getArchetype } from '@/lib/archetypes'
+import DirectMessages from '@/components/DirectMessages'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -165,6 +166,7 @@ export default function ProfileView() {
   const [portfolioLoading, setPortfolioLoading] = useState(false)
 
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [messageTarget, setMessageTarget] = useState<{ id: string; name: string } | null>(null)
 
   const adviserTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nokTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -496,6 +498,7 @@ export default function ProfileView() {
             <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: GOLD, borderTopColor: 'transparent' }} />
           </div>
         ) : (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
 
             {/* ── Left column ── */}
@@ -961,6 +964,65 @@ export default function ProfileView() {
             </motion.div>
 
           </div>
+
+          {/* ── Messages ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-4"
+          >
+            <Card className="p-6">
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-5">Messages</p>
+
+              {isAdviser ? (
+                connectedClients.length === 0 ? (
+                  <p className="text-xs text-white/20">Connect with clients to start messaging.</p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-1.5">
+                      {connectedClients.map(c => {
+                        const active = messageTarget?.id === c.id
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => setMessageTarget(active ? null : { id: c.id, name: c.name })}
+                            className="text-xs px-3 py-1.5 rounded-full transition-all font-medium"
+                            style={active
+                              ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30` }
+                              : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}
+                          >
+                            {c.name.split(' ')[0]}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {messageTarget && (
+                      <DirectMessages
+                        myId={user.id}
+                        otherId={messageTarget.id}
+                        otherName={messageTarget.name}
+                      />
+                    )}
+                    {!messageTarget && (
+                      <p className="text-xs text-white/20">Select a client above to open their thread.</p>
+                    )}
+                  </div>
+                )
+              ) : (
+                myAdviser ? (
+                  <DirectMessages
+                    myId={user.id}
+                    otherId={myAdviser.id}
+                    otherName={myAdviser.name}
+                  />
+                ) : (
+                  <p className="text-xs text-white/20">Link with an adviser to start messaging.</p>
+                )
+              )}
+            </Card>
+          </motion.div>
+          </>
         )}
       </div>
 

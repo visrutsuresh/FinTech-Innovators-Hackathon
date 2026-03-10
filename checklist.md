@@ -196,6 +196,27 @@ If this extraction is needed in more than one place, extract the price-merge log
 
 ---
 
+---
+
+### Task 10 — AI Chat Sessions
+**Status:** [x] Completed
+**Expectation:** AI conversations are saved by session. Opening the panel always starts a fresh chat. Past sessions appear as tabs; clicking one loads that conversation read-only.
+**Files changed:**
+- `supabase-schema.sql` — added `session_id UUID` column to `chat_messages`
+- `components/AIRecommendations.tsx` — session UUID generated on mount; past sessions loaded and shown as tabs; insert calls include `session_id`
+
+---
+
+### Task 11 — Adviser–Client Direct Messaging
+**Status:** [x] Completed
+**Expectation:** Advisers can message any connected client. Clients can message their adviser. Real-time delivery via Supabase Realtime.
+**Files changed:**
+- `supabase-schema.sql` — added `direct_messages` table with RLS
+- `components/DirectMessages.tsx` — new reusable thread component with real-time subscription
+- `components/profile/ProfileView.tsx` — added Messages section for both adviser and client roles
+
+---
+
 ## Implementation Log
 - 2026-03-10: Checklist created. Repository analyzed.
 - 2026-03-10: `types/index.ts` — added `investorProfile?: string` to Client.

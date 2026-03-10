@@ -20,9 +20,17 @@ interface ChatMessage {
   timestamp: number
 }
 
+interface ChatSession {
+  id: string
+  title: string
+  messages: ChatMessage[]
+}
+
+const GOLD = '#C9A227'
+
 const PRIORITY_COLOR: Record<string, string> = {
   high: '#EF4444',
-  medium: '#C9A227',
+  medium: GOLD,
   low: '#6B7280',
 }
 
@@ -49,131 +57,143 @@ const CATEGORY_ICON: Record<string, React.ReactNode> = {
   ),
 }
 
-const QUICK_PROMPT = 'Give me recommendations based on my portfolio'
+function tabStyle(active: boolean) {
+  return active
+    ? { background: `${GOLD}18`, color: GOLD, border: `1px solid ${GOLD}30` }
+    : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.07)' }
+}
 
 export default function AIRecommendations({
   clientId, portfolio, wellnessScore, riskProfile,
 }: AIRecommendationsProps) {
+  // New UUID generated each time this component mounts (panel open = new session)
+  const [sessionId] = useState<string>(() => crypto.randomUUID())
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [pastSessions, setPastSessions] = useState<ChatSession[]>([])
+  const [activeTab, setActiveTab] = useState<'new' | string>('new')
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Load chat history from Supabase on mount
+  // Load past sessions grouped by session_id on mount
   useEffect(() => {
-    async function loadHistory() {
+    async function loadSessions() {
       const { data } = await supabase
         .from('chat_messages')
         .select('*')
         .eq('client_id', clientId)
+        .not('session_id', 'is', null)
         .order('created_at', { ascending: true })
 
-      if (data && data.length > 0) {
-        setMessages(
-          data.map((row) => ({
-            id: row.id as string,
-            role: row.role as 'user' | 'assistant',
-            text: row.content as string,
-            response: row.response ?? undefined,
-            timestamp: new Date(row.created_at as string).getTime(),
-          }))
-        )
+      if (!data || data.length === 0) return
+
+      const map = new Map<string, ChatMessage[]>()
+      for (const row of data) {
+        const sid = row.session_id as string
+        if (!map.has(sid)) map.set(sid, [])
+        map.get(sid)!.push({
+          id: row.id as string,
+          role: row.role as 'user' | 'assistant',
+          text: row.content as string,
+          response: row.response ?? undefined,
+          timestamp: new Date(row.created_at as string).getTime(),
+        })
       }
-      setHistoryLoaded(true)
+
+      const sessions: ChatSession[] = Array.from(map.entries())
+        .map(([sid, msgs]) => {
+          const firstUser = msgs.find(m => m.role === 'user')
+          const raw = firstUser?.text ?? 'Chat'
+          const title = raw.length > 26 ? raw.slice(0, 26) + '…' : raw
+          return { id: sid, title, messages: msgs }
+        })
+        .reverse() // most recent first
+
+      setPastSessions(sessions)
     }
-    loadHistory()
+    loadSessions()
   }, [clientId])
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages, loading])
+  }, [messages, loading, activeTab])
 
-  // Build conversation history array for Claude (all messages so far)
   const buildConversationHistory = (msgs: ChatMessage[]): ConversationMessage[] =>
-    msgs.map((m) => ({
+    msgs.map(m => ({
       role: m.role,
-      content:
-        m.role === 'assistant' && m.response
-          ? JSON.stringify(m.response)
-          : m.text,
+      content: m.role === 'assistant' && m.response ? JSON.stringify(m.response) : m.text,
     }))
 
-  const sendMessage = useCallback(
-    async (overrideText?: string) => {
-      const text = (overrideText ?? input).trim()
-      if (!text || loading) return
+  const sendMessage = useCallback(async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim()
+    if (!text || loading) return
 
-      setInput('')
+    setInput('')
 
-      const userMsg: ChatMessage = {
-        id: `u-${Date.now()}`,
-        role: 'user',
-        text,
+    const userMsg: ChatMessage = {
+      id: `u-${Date.now()}`,
+      role: 'user',
+      text,
+      timestamp: Date.now(),
+    }
+    setMessages(prev => [...prev, userMsg])
+    setLoading(true)
+
+    await supabase.from('chat_messages').insert({
+      client_id: clientId,
+      session_id: sessionId,
+      role: 'user',
+      content: text,
+    })
+
+    try {
+      const res = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId,
+          portfolio,
+          wellnessScore,
+          riskProfile,
+          scenario: text,
+          conversationHistory: buildConversationHistory(messages),
+        }),
+      })
+      const data: RecommendationResponse = await res.json()
+      const isChat = data.type === 'chat'
+
+      const assistantMsg: ChatMessage = {
+        id: `a-${Date.now()}`,
+        role: 'assistant',
+        text: isChat ? (data.message || '') : data.summary,
+        response: isChat ? undefined : data,
         timestamp: Date.now(),
       }
-      setMessages((prev) => [...prev, userMsg])
-      setLoading(true)
+      setMessages(prev => [...prev, assistantMsg])
 
-      // Persist user message to Supabase
       await supabase.from('chat_messages').insert({
         client_id: clientId,
-        role: 'user',
-        content: text,
+        session_id: sessionId,
+        role: 'assistant',
+        content: isChat ? (data.message || '') : data.summary,
+        response: isChat ? null : data,
       })
-
-      try {
-        const res = await fetch('/api/recommendations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientId,
-            portfolio,
-            wellnessScore,
-            riskProfile,
-            scenario: text,
-            conversationHistory: buildConversationHistory(messages),
-          }),
-        })
-        const data: RecommendationResponse = await res.json()
-        const isChat = data.type === 'chat'
-
-        const assistantMsg: ChatMessage = {
-          id: `a-${Date.now()}`,
-          role: 'assistant',
-          text: isChat ? (data.message || '') : data.summary,
-          response: isChat ? undefined : data,
-          timestamp: Date.now(),
-        }
-        setMessages((prev) => [...prev, assistantMsg])
-
-        // Persist assistant message to Supabase
-        await supabase.from('chat_messages').insert({
-          client_id: clientId,
-          role: 'assistant',
-          content: isChat ? (data.message || '') : data.summary,
-          response: isChat ? null : data,
-        })
-      } catch {
-        const errMsg: ChatMessage = {
-          id: `err-${Date.now()}`,
-          role: 'assistant',
-          text: 'Something went wrong. Please try again.',
-          timestamp: Date.now(),
-        }
-        setMessages((prev) => [...prev, errMsg])
-      } finally {
-        setLoading(false)
-        setTimeout(() => inputRef.current?.focus(), 50)
-      }
-    },
+    } catch {
+      setMessages(prev => [...prev, {
+        id: `err-${Date.now()}`,
+        role: 'assistant',
+        text: 'Something went wrong. Please try again.',
+        timestamp: Date.now(),
+      }])
+    } finally {
+      setLoading(false)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [input, loading, clientId, portfolio, wellnessScore, riskProfile, messages]
-  )
+  }, [input, loading, clientId, sessionId, portfolio, wellnessScore, riskProfile, messages])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -184,8 +204,14 @@ export default function AIRecommendations({
 
   const clearChat = async () => {
     setMessages([])
-    await supabase.from('chat_messages').delete().eq('client_id', clientId)
+    await supabase.from('chat_messages').delete()
+      .eq('client_id', clientId)
+      .eq('session_id', sessionId)
   }
+
+  const displayMessages = activeTab === 'new'
+    ? messages
+    : (pastSessions.find(s => s.id === activeTab)?.messages ?? [])
 
   return (
     <div className="flex flex-col h-full" style={{ minHeight: '380px' }}>
@@ -197,7 +223,7 @@ export default function AIRecommendations({
             className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ background: 'rgba(201,162,39,0.12)' }}
           >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#C9A227" strokeWidth="2">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={GOLD} strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
           </div>
@@ -206,25 +232,61 @@ export default function AIRecommendations({
             <p className="text-xs text-white/30">AI-powered — ask anything</p>
           </div>
         </div>
-        {messages.length > 0 && (
+        {activeTab === 'new' && messages.length > 0 && (
           <button
             onClick={clearChat}
             className="text-xs text-white/20 hover:text-white/50 transition-colors"
-            title="Clear conversation"
+            title="Clear this session"
           >
             Clear
           </button>
         )}
       </div>
 
+      {/* Session tabs */}
+      {pastSessions.length > 0 && (
+        <div
+          className="flex gap-1.5 mb-3 overflow-x-auto pb-0.5"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          <button
+            onClick={() => setActiveTab('new')}
+            className="text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 transition-all"
+            style={tabStyle(activeTab === 'new')}
+          >
+            + New Chat
+          </button>
+          {pastSessions.slice(0, 5).map(s => (
+            <button
+              key={s.id}
+              onClick={() => setActiveTab(s.id)}
+              className="text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 transition-all"
+              style={tabStyle(activeTab === s.id)}
+            >
+              {s.title}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Message list */}
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto space-y-3 pr-1"
-        style={{ maxHeight: '340px', scrollbarWidth: 'thin' }}
+        style={{ maxHeight: '300px', scrollbarWidth: 'thin' }}
       >
         <AnimatePresence initial={false}>
-          {messages.map((msg) => (
+          {displayMessages.length === 0 && activeTab === 'new' && !loading && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-xs text-white/20 text-center py-8"
+            >
+              Ask anything about your portfolio
+            </motion.p>
+          )}
+
+          {displayMessages.map(msg => (
             <motion.div
               key={msg.id}
               initial={{ opacity: 0, y: 6 }}
@@ -241,7 +303,6 @@ export default function AIRecommendations({
                 </div>
               ) : (
                 <div className="max-w-[95%] space-y-2">
-                  {/* Summary */}
                   <div
                     className="px-3.5 py-2.5 rounded-2xl rounded-tl-sm text-xs text-white/65 leading-relaxed"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
@@ -249,7 +310,6 @@ export default function AIRecommendations({
                     {msg.text}
                   </div>
 
-                  {/* Recommendation cards */}
                   {msg.response?.recommendations?.map((rec, i) => {
                     const pColor = PRIORITY_COLOR[rec.priority] ?? '#6B7280'
                     return (
@@ -282,7 +342,6 @@ export default function AIRecommendations({
                     )
                   })}
 
-                  {/* Market context */}
                   {msg.response?.marketContext && (
                     <p className="text-xs text-white/20 italic px-1 leading-relaxed">
                       {msg.response.marketContext}
@@ -294,7 +353,6 @@ export default function AIRecommendations({
           ))}
         </AnimatePresence>
 
-        {/* Typing indicator */}
         {loading && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -305,7 +363,7 @@ export default function AIRecommendations({
               className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl rounded-tl-sm"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
             >
-              {[0, 1, 2].map((i) => (
+              {[0, 1, 2].map(i => (
                 <div
                   key={i}
                   className="w-1.5 h-1.5 rounded-full animate-bounce"
@@ -317,35 +375,50 @@ export default function AIRecommendations({
         )}
       </div>
 
-      {/* Input */}
-      <div
-        className="pt-3 mt-auto"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
-      >
-        <div className="flex gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Give me recommendations based on my portfolio"
-            disabled={loading}
-            className="flex-1 text-xs px-3 py-2.5 rounded-xl outline-none text-white placeholder-white/20 disabled:opacity-50"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-          />
+      {/* Input — new chat only */}
+      {activeTab === 'new' ? (
+        <div
+          className="pt-3 mt-auto"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask anything about your portfolio…"
+              disabled={loading}
+              className="flex-1 text-xs px-3 py-2.5 rounded-xl outline-none text-white placeholder-white/20 disabled:opacity-50"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+            />
+            <button
+              disabled={!input.trim() || loading}
+              onClick={() => sendMessage()}
+              className="text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-90 disabled:opacity-30 flex-shrink-0"
+              style={{ background: GOLD, color: '#080808' }}
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="pt-3 mt-auto"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+        >
           <button
-            disabled={!input.trim() || loading}
-            onClick={() => sendMessage()}
-            className="text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-90 disabled:opacity-30 flex-shrink-0"
-            style={{ background: '#C9A227', color: '#080808' }}
+            onClick={() => setActiveTab('new')}
+            className="w-full text-xs py-2 rounded-xl transition-all text-white/30 hover:text-white/60"
+            style={{ border: '1px solid rgba(255,255,255,0.06)' }}
           >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-            </svg>
+            + Start new chat
           </button>
         </div>
-      </div>
+      )}
     </div>
   )
 }

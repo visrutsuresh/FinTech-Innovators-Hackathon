@@ -121,3 +121,34 @@ CREATE POLICY "auth read chat"   ON chat_messages FOR SELECT TO authenticated US
 -- Clients can insert and delete only their own messages
 CREATE POLICY "own chat insert"  ON chat_messages FOR INSERT WITH CHECK (client_id = auth.uid());
 CREATE POLICY "own chat delete"  ON chat_messages FOR DELETE USING (client_id = auth.uid());
+
+-- ── Chat session IDs ───────────────────────────────────────────
+-- Add session_id to group messages into named conversations.
+-- Run once on existing databases.
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS session_id UUID;
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session
+  ON chat_messages(client_id, session_id, created_at);
+
+-- ── Direct Messages (adviser ↔ client) ────────────────────────
+CREATE TABLE IF NOT EXISTS direct_messages (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id    UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  recipient_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  content      TEXT NOT NULL,
+  read_at      TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;
+
+-- Users can read messages where they are sender or recipient
+CREATE POLICY "read own direct_messages" ON direct_messages
+  FOR SELECT TO authenticated
+  USING (sender_id = auth.uid() OR recipient_id = auth.uid());
+
+-- Users can only send messages as themselves
+CREATE POLICY "send direct_messages" ON direct_messages
+  FOR INSERT WITH CHECK (sender_id = auth.uid());
+
+CREATE INDEX IF NOT EXISTS idx_dm_thread
+  ON direct_messages(sender_id, recipient_id, created_at);
