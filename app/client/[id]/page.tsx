@@ -65,6 +65,7 @@ async function fetchClientById(id: string): Promise<Client | null> {
     riskProfile: profile.risk_profile as RiskProfile,
     investorProfile: profile.investor_profile ?? undefined,
     adviserId: profile.adviser_id ?? undefined,
+    hideAmountsFromAdviser: profile.hide_amounts_from_adviser === true,
     portfolio: {
       assets: mappedAssets,
       totalValue: portfolioRow?.total_value != null

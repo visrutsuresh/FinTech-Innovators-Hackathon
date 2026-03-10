@@ -8,7 +8,6 @@ import { getScoreColor } from '@/lib/utils'
 
 interface SummaryStatsProps {
   clients: Client[]
-  privacyMode?: boolean
 }
 
 function IconAUM() {
@@ -42,23 +41,21 @@ function IconAlert() {
   )
 }
 
-export default function SummaryStats({ clients, privacyMode = false }: SummaryStatsProps) {
-  const totalAUM = clients.reduce((s, c) => s + c.portfolio.totalValue, 0)
+export default function SummaryStats({ clients }: SummaryStatsProps) {
+  const visibleClients = clients.filter(c => !c.hideAmountsFromAdviser)
+  const totalAUM = visibleClients.reduce((s, c) => s + c.portfolio.totalValue, 0)
   const wellnessScores = clients.map(c => calculateWellnessScore(c.portfolio, c.riskProfile))
   const avgWellness = clients.length > 0
     ? Math.round(wellnessScores.reduce((s, w) => s + w.overall, 0) / clients.length)
     : 0
   const alertCount = wellnessScores.filter(w => w.overall < 50).length
+  const privateCount = clients.filter(c => c.hideAmountsFromAdviser).length
 
   const stats = [
     {
       label: 'Total AUM',
-      sub: privacyMode ? 'hidden (privacy mode)' : 'across all clients',
-      node: privacyMode ? (
-        <span className="text-2xl font-bold text-white tabular-nums">
-          ••••
-        </span>
-      ) : (
+      sub: privateCount > 0 ? `${visibleClients.length} clients (${privateCount} private)` : 'across all clients',
+      node: (
         <span className="text-2xl font-bold text-white tabular-nums">
           $<AnimatedCounter
             value={totalAUM >= 1_000_000 ? totalAUM / 1_000_000 : totalAUM / 1_000}

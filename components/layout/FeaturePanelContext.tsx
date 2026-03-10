@@ -10,6 +10,8 @@ export interface ClientCtx {
   wellnessScore: WellnessScore
   riskProfile: RiskProfile
   clientId: string
+  /** When true, adviser sees masked amounts; set from profile when client loads */
+  hideAmountsFromAdviser?: boolean
 }
 
 interface FeaturePanelState {
@@ -46,9 +48,14 @@ export function FeaturePanelProvider({ children }: { children: ReactNode }) {
       setPrivacyMode(false)
       return
     }
+    if (clientCtx.hideAmountsFromAdviser !== undefined) {
+      setPrivacyMode(clientCtx.hideAmountsFromAdviser)
+      localStorage.setItem(`huat:privacyMode:${clientCtx.clientId}`, String(clientCtx.hideAmountsFromAdviser))
+      return
+    }
     const stored = localStorage.getItem(`huat:privacyMode:${clientCtx.clientId}`)
     setPrivacyMode(stored === 'true')
-  }, [clientCtx?.clientId])
+  }, [clientCtx?.clientId, clientCtx?.hideAmountsFromAdviser])
 
   const openPanel = useCallback((id: FeaturePanelId) => setActivePanel(id), [])
   const closePanel = useCallback(() => setActivePanel(null), [])

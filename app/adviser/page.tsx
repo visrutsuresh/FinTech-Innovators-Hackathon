@@ -7,7 +7,6 @@ import { useAuth } from '@/components/layout/AuthContext'
 import { supabase } from '@/lib/supabase'
 import ClientTable from '@/components/adviser/ClientTable'
 import SummaryStats from '@/components/adviser/SummaryStats'
-import { useFeaturePanel } from '@/components/layout/FeaturePanelContext'
 import { Role, RiskProfile, AssetClass } from '@/types'
 import type { Client, Asset } from '@/types'
 
@@ -18,7 +17,6 @@ export default function AdviserPage() {
   const [clientsLoading, setClientsLoading] = useState(true)
   const [clientsError, setClientsError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
-  const { privacyMode } = useFeaturePanel()
 
   useEffect(() => {
     if (isLoading || isLoggingOut) return
@@ -37,7 +35,7 @@ export default function AdviserPage() {
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
-            id, name, email, role, risk_profile, investor_profile, adviser_id,
+            id, name, email, role, risk_profile, investor_profile, adviser_id, hide_amounts_from_adviser,
             portfolios (
               id, total_value, last_updated,
               assets (
@@ -94,6 +92,7 @@ export default function AdviserPage() {
             riskProfile: profile.risk_profile as RiskProfile,
             investorProfile: profile.investor_profile ?? undefined,
             adviserId: profile.adviser_id ?? undefined,
+            hideAmountsFromAdviser: profile.hide_amounts_from_adviser === true,
             portfolio: {
               assets: mappedAssets,
               totalValue: portfolio?.total_value != null
@@ -212,7 +211,7 @@ export default function AdviserPage() {
         ) : (
           <>
             <div className="mb-6">
-              <SummaryStats clients={clients} privacyMode={privacyMode} />
+              <SummaryStats clients={clients} />
             </div>
 
             <div
@@ -230,7 +229,7 @@ export default function AdviserPage() {
                   </p>
                 </div>
               </div>
-              <ClientTable clients={clients} privacyMode={privacyMode} />
+              <ClientTable clients={clients} />
             </div>
           </>
         )}

@@ -35,7 +35,8 @@ export default function ChatPanel() {
     ? user.id
     : isAdviserWithClient ? `${user!.id}:${clientCtx!.clientId}` : null
 
-  const chatClientId = isClient ? user.id : user?.id ?? ''
+  // When adviser views a client, chat is scoped to that client (history + API). When client, scope to self.
+  const chatClientId = isClient ? user!.id : (isAdviserWithClient ? clientCtx!.clientId : user?.id ?? '')
 
   const canChat = (isClient || isAdviserWithClient) && !!wellnessScore
 

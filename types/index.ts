@@ -58,6 +58,8 @@ export interface Client {
   adviserId?: string
   investorProfile?: string
   username?: string
+  /** When true, adviser roster and client view mask AUM/amounts for this client */
+  hideAmountsFromAdviser?: boolean
 }
 
 export interface Adviser {

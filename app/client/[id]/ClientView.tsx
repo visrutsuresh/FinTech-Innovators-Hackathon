@@ -132,8 +132,9 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
       wellnessScore: liveScore,
       riskProfile: client.riskProfile,
       clientId: client.id,
+      hideAmountsFromAdviser: client.hideAmountsFromAdviser,
     })
-  }, [livePortfolio, liveScore, client.riskProfile, client.id, registerClient])
+  }, [livePortfolio, liveScore, client.riskProfile, client.id, client.hideAmountsFromAdviser, registerClient])
 
   // Clear feature panel data when leaving this page
   useEffect(() => () => clearClient(), [clearClient])
@@ -378,7 +379,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
   }
 
   const isOwner = user.role === Role.CLIENT && user.id === client.id
-  const maskForViewer = !isOwner && privacyMode
+  const maskForViewer = !isOwner && (client.hideAmountsFromAdviser ?? privacyMode)
 
   const editManualTotal = editAssets
     .filter(a => !PRICE_TRACKED.includes(a.assetClass))

@@ -16,6 +16,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useAuth, Role } from './AuthContext'
+import { supabase } from '@/lib/supabase'
 import { useChatPanel } from './ChatPanelContext'
 import { useFeaturePanel, type FeaturePanelId } from './FeaturePanelContext'
 import { ExpandableTabs, type TabItem } from '@/components/ui/expandable-tabs'
@@ -23,6 +24,7 @@ import { GlowingEffect } from '@/components/ui/glowing-effect'
 
 export default function Navbar() {
   const { user, logout, isLoading } = useAuth()
+  const isClient = user?.role === Role.CLIENT
   const { isOpen: chatOpen, toggle: toggleChat, close: closeChat } = useChatPanel()
   const { activePanel, clientCtx, privacyMode, openPanel, closePanel, togglePrivacy } = useFeaturePanel()
   const router = useRouter()
@@ -101,9 +103,8 @@ export default function Navbar() {
     { title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') },
     { title: 'AI Adviser', icon: Sparkles,     onClick: handleToggleChat },
     { type: 'separator' },
-    { title: 'Privacy',    icon: privacyMode ? EyeOff : Eye, onClick: () => setPrivacyBarExpanded(p => !p) },
     { title: 'Profile',    icon: User,         onClick: handleProfileClick },
-  ], [togglePanel, privacyMode, handleProfileClick, handleToggleChat])
+  ], [togglePanel, handleProfileClick, handleToggleChat])
 
   // ADVISER overview — omit Home when already on /adviser
   const adviserTabs: TabItem[] = useMemo(() => {
@@ -146,14 +147,15 @@ export default function Navbar() {
     if (activePanel === 'blackswan') return find('Black Swan')
     if (activePanel === 'flash')     return find('Liquidity')
     if (activePanel === 'legacy')    return find('Legacy')
-    if (privacyBarExpanded)          return find('Privacy')
+    if (privacyBarExpanded && user.role === Role.CLIENT) return find('Privacy')
     if (onProfile)                   return find('Profile')
     if (chatOpen)                    return find('AI Adviser')
     return null
   }, [user, tabs, activePanel, privacyBarExpanded, onProfile, chatOpen])
 
-  const privacyTabIndex = tabs ? tabs.findIndex(t => !('type' in t) && (t as { title: string }).title === 'Privacy') : -1
-  const showPrivacyExpand = privacyTabIndex >= 0 && privacyBarExpanded
+  const isClient = user?.role === Role.CLIENT
+  const privacyTabIndex = isClient && tabs ? tabs.findIndex(t => !('type' in t) && (t as { title: string }).title === 'Privacy') : -1
+  const showPrivacyExpand = isClient && privacyTabIndex >= 0 && privacyBarExpanded
 
   return (
     <motion.nav
@@ -208,7 +210,14 @@ export default function Navbar() {
                 type="button"
                 role="switch"
                 aria-checked={privacyMode}
-                onClick={(e) => { e.stopPropagation(); togglePrivacy() }}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  const next = !privacyMode
+                  togglePrivacy()
+                  if (isClient && user?.id) {
+                    await supabase.from('profiles').update({ hide_amounts_from_adviser: next }).eq('id', user.id)
+                  }
+                }}
                 className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#DFD0B8] focus:ring-offset-2 focus:ring-offset-[#0D0D0D]"
                 style={{
                   background: privacyMode ? 'rgba(201,162,39,0.5)' : 'rgba(255,255,255,0.12)',

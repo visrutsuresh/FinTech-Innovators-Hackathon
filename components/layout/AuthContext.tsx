@@ -80,6 +80,7 @@ async function fetchUserProfile(supabaseId: string): Promise<User | null> {
     investorProfile: profile.investor_profile ?? undefined,
     adviserId: profile.adviser_id ?? undefined,
     username: profile.username ?? undefined,
+    hideAmountsFromAdviser: profile.hide_amounts_from_adviser === true,
     portfolio: {
       assets: mappedAssets,
       totalValue: portfolio?.total_value != null

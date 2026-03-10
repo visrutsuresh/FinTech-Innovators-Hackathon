@@ -62,6 +62,9 @@ CREATE POLICY "own assets write"    ON assets     FOR ALL USING (
 -- ── Username (unique handle for nominations & adviser search) ──
 -- Run once after initial schema creation. Safe to re-run (IF NOT EXISTS / IF NOT EXISTS).
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
+
+-- Client-only: when true, adviser sees masked amounts (roster AUM and client view).
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS hide_amounts_from_adviser BOOLEAN DEFAULT false;
 -- Fast lookup by username (case already stored as lowercase at app level)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username);
 
@@ -121,6 +124,13 @@ CREATE POLICY "auth read chat"   ON chat_messages FOR SELECT TO authenticated US
 -- Clients can insert and delete only their own messages
 CREATE POLICY "own chat insert"  ON chat_messages FOR INSERT WITH CHECK (client_id = auth.uid());
 CREATE POLICY "own chat delete"  ON chat_messages FOR DELETE USING (client_id = auth.uid());
+-- Advisers can insert/delete chat for their connected clients (client_id has adviser_id = auth.uid())
+CREATE POLICY "adviser chat insert" ON chat_messages FOR INSERT WITH CHECK (
+  client_id IN (SELECT id FROM profiles WHERE adviser_id = auth.uid())
+);
+CREATE POLICY "adviser chat delete" ON chat_messages FOR DELETE USING (
+  client_id IN (SELECT id FROM profiles WHERE adviser_id = auth.uid())
+);
 
 -- ── Chat session IDs ───────────────────────────────────────────
 -- Add session_id to group messages into named conversations.
