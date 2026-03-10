@@ -8,6 +8,8 @@ import type { User, Client, Adviser, Asset } from '@/types'
 interface AuthState {
   user: User | null
   isLoading: boolean
+  /** True only during an explicit logout flow so guards can avoid redirect flicker */
+  isLoggingOut: boolean
   login: (email: string, password: string) => Promise<User>
   logout: () => Promise<void>
 }
@@ -15,6 +17,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState>({
   user: null,
   isLoading: true,
+  isLoggingOut: false,
   login: async () => { throw new Error('AuthProvider not mounted') },
   logout: async () => {},
 })
@@ -89,6 +92,7 @@ async function fetchUserProfile(supabaseId: string): Promise<User | null> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const loadUser = useCallback(async (supabaseId: string) => {
     const appUser = await fetchUserProfile(supabaseId)
@@ -133,12 +137,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    setUser(null) // Clear UI immediately so profile/avatar disappear right away
-    await supabase.auth.signOut()
+    setIsLoggingOut(true)
+    try {
+      setUser(null) // Clear UI immediately so profile/avatar disappear right away
+      await supabase.auth.signOut()
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isLoggingOut, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

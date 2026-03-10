@@ -39,10 +39,11 @@ export default function Navbar() {
   }, [])
 
 
-  const handleLogout = async () => {
-    await logout()
+  // On logout, navigate to landing page immediately and clear auth in the background
+  const handleLogout = useCallback(() => {
     router.push('/')
-  }
+    void logout()
+  }, [logout, router])
 
   // Mutually-exclusive toggles — only one right-side panel open at a time
   const togglePanel = useCallback((id: FeaturePanelId) => {

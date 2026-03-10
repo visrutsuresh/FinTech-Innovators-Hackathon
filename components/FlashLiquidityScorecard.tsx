@@ -85,7 +85,7 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
   return (
     <div className="space-y-4">
       {/* Tier cards */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2.5">
         {tierCards.map(item => (
           <motion.div
             key={item.label}
@@ -100,10 +100,10 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
             >
               {item.icon}
             </div>
-            <p className="text-[10px] font-bold mb-0.5" style={{ color: item.color }}>{item.label}</p>
-            <p className="text-xs font-bold text-white tabular-nums">{formatCurrencyCompact(item.value)}</p>
-            <p className="text-[10px] mt-1 leading-tight" style={{ color: 'var(--text-caption)' }}>{item.sublabel}</p>
-            <p className="text-[10px] leading-tight" style={{ color: 'var(--text-caption)' }}>{item.desc}</p>
+            <p className="text-xs font-bold mb-0.5" style={{ color: item.color }}>{item.label}</p>
+            <p className="text-sm font-bold text-white tabular-nums">{formatCurrencyCompact(item.value)}</p>
+            <p className="text-xs mt-1 leading-tight" style={{ color: 'var(--text-caption)' }}>{item.sublabel}</p>
+            <p className="text-xs leading-tight" style={{ color: 'var(--text-caption)' }}>{item.desc}</p>
           </motion.div>
         ))}
       </div>
@@ -151,13 +151,13 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
 
       {/* Stress test */}
       <div>
-        <p className="text-xs font-semibold text-white/60 mb-1">Liquidity stress test</p>
-        <p className="text-[11px] mb-3" style={{ color: 'var(--text-caption)' }}>
+        <p className="text-sm font-semibold text-white/70 mb-1">Liquidity stress test</p>
+        <p className="text-xs mb-3" style={{ color: 'var(--text-caption)' }}>
           How much cash do you need within 7 days?
         </p>
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>$</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>$</span>
             <input
               type="number"
               value={amount}
@@ -166,7 +166,7 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
               onBlur={() => setFocused(false)}
               placeholder="e.g. 50000"
               min="0"
-              className="w-full pl-7 pr-3 py-2.5 text-xs rounded-xl outline-none text-white placeholder-white/20 transition-all"
+              className="w-full pl-7 pr-3 py-2.5 text-sm rounded-xl outline-none text-white placeholder-white/20 transition-all"
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: focused ? '1px solid rgba(201,162,39,0.4)' : '1px solid rgba(255,255,255,0.08)',
@@ -179,7 +179,7 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
             <button
               onClick={() => { if (target > 0) setTested(true) }}
               disabled={!target}
-              className="relative px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 hover:opacity-90 active:scale-95"
+              className="relative px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 hover:opacity-90 active:scale-95"
               style={{ background: '#DFD0B8', color: '#080808' }}
             >
               Test
@@ -204,7 +204,7 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
           >
             <div className="flex items-start gap-2.5">
               <div
-                className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                 style={{ background: pass ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)' }}
               >
                 {pass ? (
@@ -218,15 +218,15 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
                 )}
               </div>
               <div>
-                <p className="text-xs font-bold mb-1" style={{ color: pass ? '#10B981' : '#EF4444' }}>
+                <p className="text-sm font-bold mb-1" style={{ color: pass ? '#10B981' : '#EF4444' }}>
                   {pass ? 'Portfolio can withstand this stress' : 'Liquidity shortfall detected'}
                 </p>
                 {pass ? (
-                  <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
                     <span className="font-semibold text-white/70">{formatCurrency(liquid)}</span> accessible within T+2 — {formatCurrency(liquid - target)} above your target.
                   </p>
                 ) : (
-                  <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
                     Only <span className="font-semibold text-white/70">{formatCurrency(liquid)}</span> accessible within T+2. You face a{' '}
                     <span style={{ color: '#EF4444' }} className="font-bold">{formatCurrency(shortfall)} shortfall</span>.
                   </p>

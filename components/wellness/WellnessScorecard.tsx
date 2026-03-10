@@ -74,17 +74,7 @@ export default function WellnessScorecard({ score }: WellnessScorecardProps) {
         })}
       </div>
 
-      {/* Score context */}
-      <div
-        className="rounded-xl px-3.5 py-2.5 text-xs leading-relaxed"
-        style={{
-          background: `${overallColor}07`,
-          border: `1px solid ${overallColor}15`,
-          color: 'var(--text-caption)',
-        }}
-      >
-        Weighted: 40% diversification · 35% liquidity · 25% behavioural alignment
-      </div>
+      {/* Score context removed as per UI feedback */}
     </div>
   )
 }

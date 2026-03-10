@@ -71,7 +71,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export default function ClientView({ client, wellnessScore }: ClientViewProps) {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, isLoggingOut } = useAuth()
   const router = useRouter()
 
   const { privacyMode, registerClient, clearClient } = useFeaturePanel()
@@ -106,12 +106,12 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
 
   // Auth guard
   useEffect(() => {
-    if (isLoading) return
+    if (isLoading || isLoggingOut) return
     if (!user) { router.replace('/auth/login'); return }
     if (user.role === Role.CLIENT && user.id !== client.id) {
       router.replace(`/client/${user.id}`)
     }
-  }, [user, isLoading, client.id, router])
+  }, [user, isLoading, isLoggingOut, client.id, router])
 
   const refreshPrices = useCallback(async () => {
     try {

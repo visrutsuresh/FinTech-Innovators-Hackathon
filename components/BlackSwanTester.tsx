@@ -126,16 +126,16 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
             >
               <GlowingEffect spread={30} glow={false} disabled={false} proximity={60} inactiveZone={0.05} borderWidth={2} />
               <div className="flex items-start justify-between mb-2">
-                <span className="text-base">{s.icon}</span>
+                <span className="text-lg">{s.icon}</span>
                 <span
-                  className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                  className="text-xs font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
                   style={{ background: `${sColor}15`, color: sColor }}
                 >
                   {s.severity}
                 </span>
               </div>
-              <p className="text-xs font-semibold mb-0.5" style={{ color: 'rgba(255,255,255,0.85)' }}>{s.label}</p>
-              <p className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.3)' }}>{s.description}</p>
+              <p className="text-sm font-semibold mb-0.5" style={{ color: 'rgba(255,255,255,0.9)' }}>{s.label}</p>
+              <p className="text-xs leading-tight" style={{ color: 'rgba(255,255,255,0.4)' }}>{s.description}</p>
             </motion.button>
           )
         })}
@@ -154,7 +154,7 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
             style={{ border: '1px solid rgba(255,255,255,0.08)' }}
           >
             <div className="px-4 py-2.5" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 Simulated Impact · {SCENARIOS[activeKey].label}
               </p>
             </div>
@@ -163,23 +163,23 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
               {/* Value + Score rows */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="text-[10px] mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Portfolio value</p>
-                  <p className="text-sm font-bold text-white tabular-nums">{formatCurrency(result.portfolio.totalValue)}</p>
+                  <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Portfolio value</p>
+                  <p className="text-base font-bold text-white tabular-nums">{formatCurrency(result.portfolio.totalValue)}</p>
                   <span
-                    className="text-[10px] font-semibold"
+                    className="text-xs font-semibold"
                     style={{ color: valueDelta < 0 ? '#EF4444' : '#10B981' }}
                   >
                     {valueDelta >= 0 ? '+' : ''}{formatCurrency(valueDelta)}
                   </span>
                 </div>
                 <div className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="text-[10px] mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Wellness score</p>
-                  <p className="text-sm font-bold tabular-nums" style={{ color: getScoreColor(result.score.overall) }}>
+                  <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Wellness score</p>
+                  <p className="text-base font-bold tabular-nums" style={{ color: getScoreColor(result.score.overall) }}>
                     {result.score.overall}
-                    <span className="text-[10px] font-normal ml-1" style={{ color: 'rgba(255,255,255,0.3)' }}>/100</span>
+                    <span className="text-xs font-normal ml-1" style={{ color: 'rgba(255,255,255,0.35)' }}>/100</span>
                   </p>
                   <span
-                    className="text-[10px] font-semibold"
+                    className="text-xs font-semibold"
                     style={{ color: scoreDelta < 0 ? '#EF4444' : '#10B981' }}
                   >
                     {scoreDelta >= 0 ? '+' : ''}{scoreDelta} pts
@@ -189,7 +189,7 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
 
               {/* Per-class impacts */}
               <div className="space-y-1.5 pt-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <p className="text-[10px] font-semibold uppercase tracking-wider pt-2" style={{ color: 'var(--text-caption)' }}>
+                <p className="text-xs font-semibold uppercase tracking-wider pt-2" style={{ color: 'var(--text-caption)' }}>
                   Asset class impacts
                 </p>
                 {Object.entries(SCENARIOS[activeKey].impacts)
@@ -197,7 +197,7 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
                   .sort(([, a], [, b]) => a - b)
                   .map(([cls, impact]) => (
                     <div key={cls} className="flex items-center gap-2">
-                      <span className="text-[10px] capitalize flex-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      <span className="text-xs capitalize flex-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
                         {cls.replace('_', ' ')}
                       </span>
                       <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)', maxWidth: 80 }}>
@@ -210,7 +210,7 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
                         />
                       </div>
                       <span
-                        className="text-[10px] font-semibold tabular-nums w-10 text-right"
+                        className="text-xs font-semibold tabular-nums w-10 text-right"
                         style={{ color: impact < 0 ? '#EF4444' : '#10B981' }}
                       >
                         {impact >= 0 ? '+' : ''}{(impact * 100).toFixed(0)}%
@@ -224,7 +224,7 @@ export default function BlackSwanTester({ portfolio, riskProfile, baseScore }: P
       </AnimatePresence>
 
       {!activeKey && (
-        <p className="text-[10px] text-center pt-1" style={{ color: 'var(--text-caption)' }}>
+        <p className="text-xs text-center pt-1" style={{ color: 'var(--text-caption)' }}>
           Select a scenario above to simulate the impact on your portfolio
         </p>
       )}

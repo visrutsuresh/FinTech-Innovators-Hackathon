@@ -11,7 +11,7 @@ import { Role, RiskProfile, AssetClass } from '@/types'
 import type { Client, Asset } from '@/types'
 
 export default function AdviserPage() {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, isLoggingOut } = useAuth()
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
   const [clientsLoading, setClientsLoading] = useState(true)
@@ -19,10 +19,11 @@ export default function AdviserPage() {
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== Role.ADVISER)) {
+    if (isLoading || isLoggingOut) return
+    if (!user || user.role !== Role.ADVISER) {
       router.replace('/auth/login')
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, isLoggingOut, router])
 
   useEffect(() => {
     if (!user || user.role !== Role.ADVISER) return

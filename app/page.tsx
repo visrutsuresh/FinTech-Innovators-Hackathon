@@ -307,7 +307,7 @@ function TrailBorderButton({
         isolation: 'isolate',
         background: isDark ? C.deepA(0.95) : C.light,
         // Darken text on the light (cream) variant for better contrast
-        color: isDark ? C.lightA(0.8) : '#050505',
+        color: isDark ? C.lightA(0.8) : '#000000',
         textDecoration: 'none',
         pointerEvents: animDone ? 'auto' : 'none',
         border: `1px solid ${isDark ? C.midA(0.25) : C.midA(0.2)}`,
@@ -329,7 +329,12 @@ function TrailBorderButton({
         </div>
       )}
 
-      <span className="z-10 relative">{children}</span>
+      <span
+        className="z-10 relative"
+        style={{ color: isDark ? C.lightA(0.8) : '#000000' }}
+      >
+        {children}
+      </span>
     </a>
   )
 }

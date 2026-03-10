@@ -137,7 +137,7 @@ function SearchBox({
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function ProfileView() {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, isLoggingOut } = useAuth()
   const router = useRouter()
 
   // ── State ────────────────────────────────────────────────────────────────────
@@ -177,9 +177,9 @@ export default function ProfileView() {
 
   // ── Auth guard ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (isLoading) return
+    if (isLoading || isLoggingOut) return
     if (!user) router.replace('/auth/login')
-  }, [user, isLoading, router])
+  }, [user, isLoading, isLoggingOut, router])
 
   // ── Load data ─────────────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
@@ -854,7 +854,7 @@ export default function ProfileView() {
             >
               <Card className="p-6 flex-1">
                 <div className="flex items-center gap-2 mb-5">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Incoming Requests</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/30">Incoming Requests</p>
                   {totalIncoming > 0 && (
                     <span
                       className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
@@ -873,19 +873,19 @@ export default function ProfileView() {
                       {incomingAdviserReqs.map(req => (
                         <div
                           key={req.id}
-                          className="rounded-xl p-3.5 space-y-3"
+                          className="rounded-xl p-4 space-y-3"
                           style={{ background: `${GOLD}06`, border: `1px solid ${GOLD}18` }}
                         >
                           <div className="flex items-center gap-2.5">
-                            <Avatar name={req.profile?.name ?? '?'} size={8} color={GOLD} />
+                            <Avatar name={req.profile?.name ?? '?'} size={9} color={GOLD} />
                             <div>
-                              <p className="text-xs font-medium text-white/80">{req.profile?.name}</p>
+                              <p className="text-sm font-medium text-white/80">{req.profile?.name}</p>
                               {req.profile?.username && (
-                                <p className="text-[10px] font-mono" style={{ color: `${GOLD}60` }}>@{req.profile.username}</p>
+                                <p className="text-xs font-mono" style={{ color: `${GOLD}60` }}>@{req.profile.username}</p>
                               )}
                             </div>
                           </div>
-                          <p className="text-[10px] text-white/35 leading-snug">
+                          <p className="text-xs text-white/35 leading-snug">
                             Wants to connect as your financial adviser.
                           </p>
                           <div className="flex gap-1.5">
@@ -894,7 +894,7 @@ export default function ProfileView() {
                               <button
                                 onClick={() => acceptAdviserRequest(req)}
                                 disabled={!!actionLoading}
-                                className="relative w-full py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
+                                className="relative w-full py-1.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
                                 style={{ background: EMERALD, color: '#080808' }}
                               >
                                 {actionLoading === `accept-adv-${req.id}` ? '…' : 'Accept'}
@@ -905,7 +905,7 @@ export default function ProfileView() {
                               <button
                                 onClick={() => rejectAdviserRequest(req.id)}
                                 disabled={!!actionLoading}
-                                className="relative w-full py-1.5 rounded-lg text-[11px] transition-all disabled:opacity-50 text-white/45 hover:text-white/70"
+                                className="relative w-full py-1.5 rounded-lg text-sm transition-all disabled:opacity-50 text-white/45 hover:text-white/70"
                                 style={{ border: '1px solid rgba(255,255,255,0.08)' }}
                               >
                                 Decline
@@ -940,10 +940,10 @@ export default function ProfileView() {
                                 color={nom.status === 'accepted' ? EMERALD : 'rgba(255,255,255,0.5)'}
                               />
                               <div>
-                                <p className="text-xs font-medium text-white/80">{nom.profile?.name}</p>
+                                <p className="text-sm font-medium text-white/80">{nom.profile?.name}</p>
                                 {nom.profile?.username && (
                                   <p
-                                    className="text-[10px] font-mono"
+                                    className="text-xs font-mono"
                                     style={{ color: nom.status === 'accepted' ? `${EMERALD}60` : 'var(--text-caption)' }}
                                   >
                                     @{nom.profile.username}
@@ -954,7 +954,7 @@ export default function ProfileView() {
                             <StatusPill status={nom.status} />
                           </div>
 
-                          <p className="text-[10px] text-white/35 leading-snug">
+                          <p className="text-xs text-white/35 leading-snug">
                             {nom.status === 'accepted'
                               ? 'You are their nominated next of kin. You can view their assets.'
                               : 'Has nominated you as their next of kin.'}

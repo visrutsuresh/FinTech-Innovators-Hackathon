@@ -108,7 +108,7 @@ export default function LegacyReadiness({ clientId, isAdviser = false }: Props) 
     : 'Action Required'
 
   if (!mounted) return (
-    <div className="space-y-3">
+        <div className="space-y-3">
       {[1, 2, 3].map(i => (
         <div key={i} className="skeleton h-14 rounded-xl" />
       ))}
@@ -116,14 +116,14 @@ export default function LegacyReadiness({ clientId, isAdviser = false }: Props) 
   )
 
   return (
-    <div className="space-y-4">
+      <div className="space-y-4">
       {/* Score summary */}
-      <div
+        <div
         className="rounded-xl p-4 flex items-center gap-4"
         style={{ background: `${scoreColor}08`, border: `1px solid ${scoreColor}18` }}
       >
         {/* Arc */}
-        <div className="relative flex-shrink-0" style={{ width: 60, height: 60 }}>
+        <div className="relative flex-shrink-0" style={{ width: 68, height: 68 }}>
           <svg viewBox="0 0 60 60" width="60" height="60">
             <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
             <motion.circle
@@ -141,13 +141,13 @@ export default function LegacyReadiness({ clientId, isAdviser = false }: Props) 
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-base font-bold leading-none" style={{ color: scoreColor }}>{score}</span>
-            <span className="text-[10px]" style={{ color: 'var(--text-caption)' }}>/{ITEMS.length}</span>
+            <span className="text-lg font-bold leading-none" style={{ color: scoreColor }}>{score}</span>
+            <span className="text-xs" style={{ color: 'var(--text-caption)' }}>/{ITEMS.length}</span>
           </div>
         </div>
         <div>
-          <p className="text-sm font-bold" style={{ color: scoreColor }}>{scoreLabel}</p>
-          <p className="text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-caption)' }}>
+          <p className="text-base font-bold" style={{ color: scoreColor }}>{scoreLabel}</p>
+          <p className="text-sm mt-0.5 leading-snug" style={{ color: 'var(--text-caption)' }}>
             {isAdviser
               ? 'Client-managed checklist'
               : score === ITEMS.length
@@ -210,10 +210,10 @@ export default function LegacyReadiness({ clientId, isAdviser = false }: Props) 
 
               {/* Content */}
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium transition-colors" style={{ color: done ? '#10B981' : 'rgba(255,255,255,0.78)' }}>
+                <p className="text-sm font-medium transition-colors" style={{ color: done ? '#10B981' : 'rgba(255,255,255,0.9)' }}>
                   {item.label}
                 </p>
-                <p className="text-[10px] mt-0.5 leading-snug" style={{ color: 'var(--text-caption)' }}>
+                <p className="text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-caption)' }}>
                   {item.description}
                 </p>
               </div>

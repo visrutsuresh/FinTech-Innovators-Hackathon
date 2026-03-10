@@ -77,13 +77,13 @@ async function fetchClientById(id: string): Promise<Client | null> {
 
 export default function ClientPage({ params }: PageProps) {
   const { id } = use(params)
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, isLoggingOut } = useAuth()
   const router = useRouter()
   const [client, setClient] = useState<Client | null>(null)
   const [wellnessScore, setWellnessScore] = useState<WellnessScore | null>(null)
 
   useEffect(() => {
-    if (isLoading) return
+    if (isLoading || isLoggingOut) return
 
     // Not authenticated → redirect
     if (!user) {
@@ -109,7 +109,7 @@ export default function ClientPage({ params }: PageProps) {
       setClient(c)
       setWellnessScore(calculateWellnessScore(c.portfolio, c.riskProfile))
     })
-  }, [id, user, isLoading, router])
+  }, [id, user, isLoading, isLoggingOut, router])
 
   if (!client || !wellnessScore) {
     return (

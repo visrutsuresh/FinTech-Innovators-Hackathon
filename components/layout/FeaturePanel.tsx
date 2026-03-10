@@ -7,7 +7,7 @@ import BlackSwanTester from '@/components/BlackSwanTester'
 import FlashLiquidityScorecard from '@/components/FlashLiquidityScorecard'
 import LegacyReadiness from '@/components/LegacyReadiness'
 
-export const FEATURE_PANEL_WIDTH = 420
+export const FEATURE_PANEL_WIDTH = 520
 
 const PANEL_META: Record<FeaturePanelId, { title: string; subtitle: string; iconPath: string }> = {
   blackswan: {
@@ -68,8 +68,10 @@ export default function FeaturePanel() {
                 </svg>
               </div>
               <div>
-                <p className="text-xs font-semibold text-white">{PANEL_META[activePanel].title}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-caption)' }}>
+                <p className="text-sm font-semibold text-white tracking-wide">
+                  {PANEL_META[activePanel].title}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-caption)' }}>
                   {PANEL_META[activePanel].subtitle}
                 </p>
               </div>
