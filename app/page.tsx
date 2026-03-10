@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from '@/components/layout/AuthContext'
@@ -282,6 +282,7 @@ function PillarCard({ p, i }: { p: typeof pillars[0] & { accentBright?: string }
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
   const { user } = useAuth()
+  const router = useRouter()
   const heroRef = useRef<HTMLDivElement>(null)
   const pageRef = useRef<HTMLDivElement>(null)
 
@@ -297,7 +298,12 @@ export default function LandingPage() {
   const smoothX = useSpring(cursorX, { stiffness: 60, damping: 20 })
   const smoothY = useSpring(cursorY, { stiffness: 60, damping: 20 })
 
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    setMounted(true)
+    if (user) {
+      router.replace(user.role === 'adviser' ? '/adviser' : `/client/${user.id}`)
+    }
+  }, [user, router])
 
 
   const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -385,30 +391,6 @@ export default function LandingPage() {
             />
           ))}
 
-          {/* ── Play button ── */}
-          {mounted && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4, duration: 0.5, ease: E }}
-              className="absolute top-8 left-1/2 -translate-x-1/2 z-20"
-            >
-              <motion.button
-                whileHover={{ scale: 1.12, boxShadow: `0 0 24px ${C.midA(0.4)}` }}
-                whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{
-                  background: C.deepA(0.7),
-                  border: `1px solid ${C.midA(0.3)}`,
-                  backdropFilter: 'blur(12px)',
-                }}
-              >
-                <svg width="11" height="12" viewBox="0 0 11 12" fill={C.light}>
-                  <path d="M1 1.5l9 4.5-9 4.5V1.5z" />
-                </svg>
-              </motion.button>
-            </motion.div>
-          )}
 
           {/* ── LEFT NODES ── */}
           {mounted && LEFT_NODES.map((n, i) => (
@@ -431,34 +413,8 @@ export default function LandingPage() {
           {/* ── CENTER CONTENT ── */}
           <motion.div
             className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center"
-            style={{ y: heroContentY, opacity: heroOpacity, padding: '0 clamp(100px, 17%, 240px)' }}
+            style={{ y: heroContentY, opacity: heroOpacity, padding: '0 clamp(48px, 8%, 140px)' }}
           >
-            {/* Pill badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85, y: -12 }}
-              animate={mounted ? { opacity: 1, scale: 1, y: 0 } : {}}
-              transition={{ delay: 0.28, duration: 0.55, ease: E }}
-              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full mb-8"
-              style={{
-                background: C.deepA(0.7),
-                border: `1px solid ${C.midA(0.3)}`,
-                backdropFilter: 'blur(16px)',
-                boxShadow: `0 0 24px ${C.deepA(0.6)}`,
-              }}
-            >
-              <motion.span
-                animate={{ scale: [1, 1.7, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{ repeat: Infinity, duration: 2.2 }}
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ background: C.light }}
-              />
-              <span className="text-xs font-medium tracking-wide" style={{ color: C.light }}>
-                Wealth Wellness · NTU FinTech 2026
-              </span>
-              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke={C.mid} strokeWidth="2.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </motion.div>
 
             {/* Headline — staggered words */}
             <motion.div
@@ -471,8 +427,8 @@ export default function LandingPage() {
                 style={{
                   fontSize: 'clamp(2.8rem, 6.5vw, 6rem)',
                   fontWeight: 700,
-                  lineHeight: 1.02,
-                  letterSpacing: '-0.036em',
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.022em',
                 }}
               >
                 <span style={{ color: C.white, display: 'block' }}>Wealth wellness</span>
@@ -510,7 +466,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={mounted ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.56, duration: 0.55, ease: E }}
-              className="text-sm leading-relaxed max-w-xs mx-auto mb-9"
+              className="text-sm leading-relaxed mx-auto mb-9"
               style={{ color: C.midA(0.55) }}
             >
               Unified portfolio tracking, real‑time wellness scoring, and Claude‑powered AI recommendations.
@@ -519,43 +475,41 @@ export default function LandingPage() {
             {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
-              animate={mounted ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.68, duration: 0.5, ease: E }}
+              animate={mounted ? { opacity: 1, y: [0, -6, 0] } : {}}
+              transition={mounted ? {
+                opacity: { delay: 0.68, duration: 0.5, ease: E },
+                y: { delay: 1.4, duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
+              } : {}}
               className="flex items-center gap-3"
             >
               <div className="relative rounded-full">
-                <GlowingEffect spread={25} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
+                <GlowingEffect spread={20} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
                 <motion.a
                   ref={mag1.ref}
                   href="/auth/login"
-                  whileHover={{ boxShadow: `0 0 32px ${C.lightA(0.25)}, 0 8px 32px rgba(13,13,13,0.5)` }}
-                  whileTap={{ scale: 0.96 }}
-                  className="relative inline-flex items-center gap-2 text-sm font-semibold px-6 py-2.5 rounded-full"
+                  whileHover={{ color: C.white }}
+                  whileTap={{ scale: 0.97 }}
+                  className="relative text-base font-semibold px-10 py-4 rounded-full inline-block"
                   style={{
                     x: mag1.sx,
                     y: mag1.sy,
-                    background: C.deepA(0.9),
-                    border: `1px solid ${C.midA(0.35)}`,
-                    color: C.light,
-                    backdropFilter: 'blur(16px)',
+                    color: C.midA(0.7),
+                    border: `1px solid ${C.midA(0.3)}`,
                     textDecoration: 'none',
                   }}
                 >
-                  Open App
-                  <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15M4.5 4.5h15v15" />
-                  </svg>
+                  Sign in
                 </motion.a>
               </div>
 
               <div className="relative rounded-full">
-                <GlowingEffect spread={25} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
+                <GlowingEffect spread={20} glow={false} disabled={false} proximity={50} inactiveZone={0.01} borderWidth={1} />
                 <motion.a
                   ref={mag2.ref}
                   href="/auth/signup"
                   whileHover={{ scale: 1.03, boxShadow: `0 0 24px ${C.lightA(0.2)}` }}
                   whileTap={{ scale: 0.96 }}
-                  className="relative text-sm font-semibold px-6 py-2.5 rounded-full inline-block"
+                  className="relative text-base font-semibold px-10 py-4 rounded-full inline-block"
                   style={{
                     x: mag2.sx,
                     y: mag2.sy,
@@ -564,7 +518,7 @@ export default function LandingPage() {
                     textDecoration: 'none',
                   }}
                 >
-                  Discover More
+                  Get started
                 </motion.a>
               </div>
             </motion.div>
@@ -597,57 +551,7 @@ export default function LandingPage() {
             </motion.div>
           )}
 
-          {/* ── SCROLL INDICATOR — bottom left ── */}
-          {mounted && (
-            <motion.div
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 1.5, duration: 0.5 }}
-              className="absolute bottom-6 left-6 z-20 flex items-center gap-2.5"
-            >
-              <motion.div
-                animate={{ y: [0, 4, 0] }}
-                transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
-                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{
-                  background: C.deepA(0.7),
-                  border: `1px solid ${C.midA(0.25)}`,
-                }}
-              >
-                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke={C.mid} strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </motion.div>
-              <span className="text-[10px] font-medium tracking-[0.14em]" style={{ color: C.midA(0.45) }}>
-                02/03 · Scroll down
-              </span>
-            </motion.div>
-          )}
 
-          {/* ── PORTFOLIO HORIZONS — bottom right ── */}
-          {mounted && (
-            <motion.div
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 1.6, duration: 0.5 }}
-              className="absolute bottom-6 right-6 z-20 text-right"
-            >
-              <p className="text-[10px] font-medium tracking-[0.14em] mb-1.5" style={{ color: C.midA(0.4) }}>
-                Portfolio Horizons
-              </p>
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ delay: 1.9, duration: 0.6, ease: E }}
-                className="ml-auto"
-                style={{
-                  width: 32, height: 1,
-                  background: `linear-gradient(90deg, transparent, ${C.mid})`,
-                  transformOrigin: 'right',
-                }}
-              />
-            </motion.div>
-          )}
         </motion.div>
 
         {/* ── ASSET CLASS STRIP ── */}

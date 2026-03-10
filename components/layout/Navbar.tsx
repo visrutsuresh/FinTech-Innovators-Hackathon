@@ -218,28 +218,6 @@ export default function Navbar() {
             <LogOut size={13} strokeWidth={1.8} />
             <span className="hidden sm:block">Sign out</span>
           </motion.button>
-        ) : !onAuthPage ? (
-          <>
-            <Link
-              href="/auth/login"
-              className="text-sm transition-colors"
-              style={{ color: 'rgba(255,255,255,0.45)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
-            >
-              Sign in
-            </Link>
-            <div className="relative rounded-xl">
-              <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
-              <Link
-                href="/auth/signup"
-                className="relative text-sm px-4 py-1.5 rounded-xl font-semibold transition-all hover:opacity-90 active:scale-95 inline-block"
-                style={{ background: '#DFD0B8', color: '#0D0D0D' }}
-              >
-                Get started
-              </Link>
-            </div>
-          </>
         ) : null}
       </div>
     </motion.nav>
