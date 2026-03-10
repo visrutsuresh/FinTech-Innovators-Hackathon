@@ -31,10 +31,9 @@ export default function AdviserPage() {
 
     async function loadClients() {
       setClientsLoading(true)
+      setClientsError(null)
       try {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select(`
+        const selectWithPrivacy = `
             id, name, email, role, risk_profile, investor_profile, adviser_id, hide_amounts_from_adviser,
             portfolios (
               id, total_value, last_updated,
@@ -43,9 +42,33 @@ export default function AdviserPage() {
                 quantity, is_crypto, coin_gecko_id, finage_symbol
               )
             )
-          `)
+          `
+        const selectWithoutPrivacy = `
+            id, name, email, role, risk_profile, investor_profile, adviser_id,
+            portfolios (
+              id, total_value, last_updated,
+              assets (
+                id, name, ticker, asset_class, value, currency,
+                quantity, is_crypto, coin_gecko_id, finage_symbol
+              )
+            )
+          `
+
+        let result = await supabase
+          .from('profiles')
+          .select(selectWithPrivacy)
           .eq('adviser_id', adviserId)
           .eq('role', 'client')
+
+        if (result.error && result.error.message?.includes('hide_amounts_from_adviser')) {
+          result = await supabase
+            .from('profiles')
+            .select(selectWithoutPrivacy)
+            .eq('adviser_id', adviserId)
+            .eq('role', 'client')
+        }
+
+        const { data: profiles, error: profilesError } = result
 
         if (profilesError) {
           console.error('Failed to load clients:', profilesError.message)
@@ -54,7 +77,6 @@ export default function AdviserPage() {
           setClientsLoading(false)
           return
         }
-        setClientsError(null)
 
         if (!profiles?.length) { setClients([]); setClientsLoading(false); return }
 

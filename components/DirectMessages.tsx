@@ -19,13 +19,31 @@ interface DirectMessagesProps {
   otherName: string
 }
 
+function formatMessageTime(ts: number): string {
+  const d = new Date(ts)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 864e5)
+  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  if (msgDay.getTime() === today.getTime()) {
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  }
+  if (msgDay.getTime() === yesterday.getTime()) return 'Yesterday'
+  if (now.getTime() - msgDay.getTime() < 7 * 864e5) {
+    return d.toLocaleDateString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+  }
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
+}
+
 export default function DirectMessages({ myId, otherId, otherName }: DirectMessagesProps) {
   const [messages, setMessages] = useState<DM[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [loading, setLoading] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
+    setLoading(true)
     const { data } = await supabase
       .from('direct_messages')
       .select('id, sender_id, content, created_at')
@@ -33,6 +51,7 @@ export default function DirectMessages({ myId, otherId, otherName }: DirectMessa
         `and(sender_id.eq.${myId},recipient_id.eq.${otherId}),and(sender_id.eq.${otherId},recipient_id.eq.${myId})`
       )
       .order('created_at', { ascending: true })
+      .limit(5000)
 
     if (data) {
       setMessages(
@@ -44,6 +63,7 @@ export default function DirectMessages({ myId, otherId, otherName }: DirectMessa
         }))
       )
     }
+    setLoading(false)
   }, [myId, otherId])
 
   useEffect(() => {
@@ -112,14 +132,16 @@ export default function DirectMessages({ myId, otherId, otherName }: DirectMessa
   }
 
   return (
-    <div className="flex flex-col" style={{ height: '260px' }}>
-      {/* Thread */}
+    <div className="flex flex-col" style={{ height: '340px' }}>
+      {/* Thread — all history, newest at bottom */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-2 pb-2 pr-0.5"
+        className="flex-1 overflow-y-auto space-y-1.5 pb-2 pr-0.5"
         style={{ scrollbarWidth: 'thin' }}
       >
-        {messages.length === 0 ? (
+        {loading ? (
+          <p className="text-xs text-white/25 text-center py-6">Loading conversation…</p>
+        ) : messages.length === 0 ? (
           <p className="text-xs text-white/20 text-center py-8">
             No messages yet — say hello to {otherName.split(' ')[0]}!
           </p>
@@ -129,7 +151,7 @@ export default function DirectMessages({ myId, otherId, otherName }: DirectMessa
               key={msg.id}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${msg.senderId === myId ? 'justify-end' : 'justify-start'}`}
+              className={`flex flex-col ${msg.senderId === myId ? 'items-end' : 'items-start'}`}
             >
               <div
                 className="max-w-[80%] px-3 py-2 rounded-2xl text-xs leading-relaxed"
@@ -151,6 +173,12 @@ export default function DirectMessages({ myId, otherId, otherName }: DirectMessa
               >
                 {msg.content}
               </div>
+              <span
+                className="text-[10px] mt-0.5 px-1"
+                style={{ color: 'rgba(255,255,255,0.25)' }}
+              >
+                {formatMessageTime(msg.createdAt)}
+              </span>
             </motion.div>
           ))
         )}
