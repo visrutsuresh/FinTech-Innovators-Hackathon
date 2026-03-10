@@ -27,6 +27,9 @@ interface ExpandableTabsProps {
   /** Controlled active index — pass null to deselect all */
   activeIndex?: number | null;
   onChange?: (index: number | null) => void;
+  /** Optional content shown when this tab index is active (e.g. a toggle); renders inside the bar after the tabs */
+  expandContent?: React.ReactNode;
+  expandWhenIndex?: number;
 }
 
 const buttonVariants = {
@@ -51,13 +54,15 @@ export function ExpandableTabs({
   className,
   activeIndex,
   onChange,
+  expandContent,
+  expandWhenIndex,
 }: ExpandableTabsProps) {
   const ref = React.useRef<HTMLDivElement>(null);
   const isControlled = activeIndex !== undefined;
+  const showExpand = expandContent != null && expandWhenIndex != null && activeIndex === expandWhenIndex;
 
-  // Close on outside click only in uncontrolled mode
+  // Close on outside click — when controlled, still notify so parent can collapse (e.g. privacy bar)
   React.useEffect(() => {
-    if (isControlled) return;
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         onChange?.(null);
@@ -65,7 +70,7 @@ export function ExpandableTabs({
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [isControlled, onChange]);
+  }, [onChange]);
 
   const handleSelect = (index: number, tab: Tab) => {
     tab.onClick?.();
@@ -181,6 +186,26 @@ export function ExpandableTabs({
           </motion.button>
         );
       })}
+      {showExpand && (
+        <>
+          <div
+            className="mx-1 h-4 w-px flex-shrink-0"
+            style={{ background: "rgba(255,255,255,0.08)" }}
+            aria-hidden="true"
+          />
+          <AnimatePresence initial={false}>
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: "auto", opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="flex items-center overflow-hidden"
+            >
+              {expandContent}
+            </motion.div>
+          </AnimatePresence>
+        </>
+      )}
     </div>
   );
 }

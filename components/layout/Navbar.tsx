@@ -31,6 +31,7 @@ export default function Navbar() {
   const onLanding = pathname === '/'
   const onAuthPage = pathname?.startsWith('/auth')
   const [scrolled, setScrolled] = useState(false)
+  const [privacyBarExpanded, setPrivacyBarExpanded] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -100,9 +101,9 @@ export default function Navbar() {
     { title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') },
     { title: 'AI Adviser', icon: Sparkles,     onClick: handleToggleChat },
     { type: 'separator' },
-    { title: 'Privacy',    icon: privacyMode ? EyeOff : Eye, onClick: togglePrivacy },
+    { title: 'Privacy',    icon: privacyMode ? EyeOff : Eye, onClick: () => setPrivacyBarExpanded(p => !p) },
     { title: 'Profile',    icon: User,         onClick: handleProfileClick },
-  ], [togglePanel, privacyMode, togglePrivacy, handleProfileClick, handleToggleChat])
+  ], [togglePanel, privacyMode, handleProfileClick, handleToggleChat])
 
   // ADVISER overview — omit Home when already on /adviser
   const adviserTabs: TabItem[] = useMemo(() => {
@@ -121,11 +122,12 @@ export default function Navbar() {
     items.push({ title: 'Black Swan', icon: TrendingDown, onClick: () => togglePanel('blackswan') })
     items.push({ title: 'Liquidity',  icon: Zap,          onClick: () => togglePanel('flash') })
     items.push({ title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') })
-    items.push({ title: 'AI Adviser', icon: Sparkles,     onClick: handleToggleChat })
+    items.push({ title: 'Privacy',    icon: privacyMode ? EyeOff : Eye, onClick: () => setPrivacyBarExpanded(p => !p) })
+    items.push({ title: 'AI Adviser', icon: Sparkles,                   onClick: handleToggleChat })
     items.push({ type: 'separator' })
     items.push({ title: 'Profile',    icon: User,         onClick: handleProfileClick })
     return items
-  }, [onClientDashboard, user?.id, togglePanel, handleProfileClick, handleToggleChat])
+  }, [onClientDashboard, user?.id, togglePanel, privacyMode, handleProfileClick, handleToggleChat])
 
   // tabs must be declared before activeIndex (which reads it)
   const tabs =
@@ -141,14 +143,17 @@ export default function Navbar() {
     if (!user || !tabs) return null
     const find = (title: string) => tabs.findIndex(t => !('type' in t) && (t as { title: string }).title === title)
 
-    if (activePanel === 'blackswan')               return find('Black Swan')
-    if (activePanel === 'flash')                   return find('Liquidity')
-    if (activePanel === 'legacy')                  return find('Legacy')
-    if (privacyMode && user.role === Role.ADVISER) return find('Privacy')
-    if (onProfile)                                 return find('Profile')
-    if (chatOpen)                                  return find('AI Adviser')
+    if (activePanel === 'blackswan') return find('Black Swan')
+    if (activePanel === 'flash')     return find('Liquidity')
+    if (activePanel === 'legacy')    return find('Legacy')
+    if (privacyBarExpanded)          return find('Privacy')
+    if (onProfile)                   return find('Profile')
+    if (chatOpen)                    return find('AI Adviser')
     return null
-  }, [user, tabs, activePanel, privacyMode, onProfile, chatOpen])
+  }, [user, tabs, activePanel, privacyBarExpanded, onProfile, chatOpen])
+
+  const privacyTabIndex = tabs ? tabs.findIndex(t => !('type' in t) && (t as { title: string }).title === 'Privacy') : -1
+  const showPrivacyExpand = privacyTabIndex >= 0 && privacyBarExpanded
 
   return (
     <motion.nav
@@ -169,7 +174,7 @@ export default function Navbar() {
     >
       {/* ── Col 1: Logo ── */}
       <Link
-        href="/"
+        href={user ? (user.role === Role.ADVISER ? '/adviser' : `/client/${user.id}`) : '/'}
         className="flex items-center gap-2.5 group flex-shrink-0"
       >
         <div
@@ -192,7 +197,34 @@ export default function Navbar() {
         <ExpandableTabs
           tabs={tabs}
           activeIndex={activeIndex}
-          onChange={() => {/* driven by onClick per tab */}}
+          onChange={(index) => {
+            if (index === null) setPrivacyBarExpanded(false)
+          }}
+          expandWhenIndex={showPrivacyExpand ? privacyTabIndex : undefined}
+          expandContent={showPrivacyExpand ? (
+            <div className="flex items-center gap-2 pl-1 pr-2 py-0.5">
+              <span className="text-[11px] font-medium whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.7)' }}>Hide amounts from adviser</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={privacyMode}
+                onClick={(e) => { e.stopPropagation(); togglePrivacy() }}
+                className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#DFD0B8] focus:ring-offset-2 focus:ring-offset-[#0D0D0D]"
+                style={{
+                  background: privacyMode ? 'rgba(201,162,39,0.5)' : 'rgba(255,255,255,0.12)',
+                  boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+                }}
+              >
+                <span
+                  className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-all duration-200"
+                  style={{
+                    marginLeft: privacyMode ? '1rem' : '2px',
+                    marginTop: '2px',
+                  }}
+                />
+              </button>
+            </div>
+          ) : undefined}
         />
       ) : (
         <div />
@@ -200,30 +232,30 @@ export default function Navbar() {
 
       {/* ── Col 3: Right actions ── */}
       <div className="flex items-center gap-2 justify-end">
-        {!isLoading && user ? (
+        {!isLoading && user && !onAuthPage && (
           <motion.button
-            onClick={handleLogout}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            className="relative flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors"
-            style={{
-              color: 'rgba(255,255,255,0.3)',
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.color = 'rgba(255,255,255,0.3)'
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
-            }}
-          >
-            <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
-            <LogOut size={13} strokeWidth={1.8} />
-            <span className="hidden sm:block">Sign out</span>
-          </motion.button>
-        ) : null}
+              onClick={handleLogout}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="relative flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: 'rgba(255,255,255,0.3)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = 'rgba(255,255,255,0.3)'
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
+              }}
+            >
+              <GlowingEffect spread={20} glow={false} disabled={false} proximity={40} inactiveZone={0.01} borderWidth={1} />
+              <LogOut size={13} strokeWidth={1.8} />
+              <span className="hidden sm:block">Sign out</span>
+            </motion.button>
+        )}
       </div>
     </motion.nav>
   )
