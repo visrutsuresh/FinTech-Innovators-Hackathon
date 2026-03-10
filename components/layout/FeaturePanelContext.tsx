@@ -37,18 +37,30 @@ const FeaturePanelContext = createContext<FeaturePanelState>({
 export function FeaturePanelProvider({ children }: { children: ReactNode }) {
   const [activePanel, setActivePanel] = useState<FeaturePanelId | null>(null)
   const [clientCtx, setClientCtx] = useState<ClientCtx | null>(null)
-  const [privacyMode, setPrivacyMode] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('huat:privacyMode') === 'true'
-  })
+  const [privacyMode, setPrivacyMode] = useState(false)
 
+  // Load per-client privacy flag whenever the active client changes.
   useEffect(() => {
-    localStorage.setItem('huat:privacyMode', String(privacyMode))
-  }, [privacyMode])
+    if (typeof window === 'undefined') return
+    if (!clientCtx?.clientId) {
+      setPrivacyMode(false)
+      return
+    }
+    const stored = localStorage.getItem(`huat:privacyMode:${clientCtx.clientId}`)
+    setPrivacyMode(stored === 'true')
+  }, [clientCtx?.clientId])
 
   const openPanel = useCallback((id: FeaturePanelId) => setActivePanel(id), [])
   const closePanel = useCallback(() => setActivePanel(null), [])
-  const togglePrivacy = useCallback(() => setPrivacyMode(p => !p), [])
+  const togglePrivacy = useCallback(() => {
+    setPrivacyMode(prev => {
+      const next = !prev
+      if (typeof window !== 'undefined' && clientCtx?.clientId) {
+        localStorage.setItem(`huat:privacyMode:${clientCtx.clientId}`, String(next))
+      }
+      return next
+    })
+  }, [clientCtx?.clientId])
   const registerClient = useCallback((ctx: ClientCtx) => setClientCtx(ctx), [])
   const clearClient = useCallback(() => {
     setClientCtx(null)
