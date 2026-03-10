@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState, type ComponentType } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { WellnessScore } from '@/types'
 import { getScoreColor } from '@/lib/utils'
@@ -36,7 +36,7 @@ type BreakdownKey = 'diversification' | 'liquidity' | 'behavioral'
 const breakdownItems: Array<{
   key: BreakdownKey
   label: string
-  Icon: (props: { color: string }) => React.ReactElement
+  Icon: ComponentType<{ color: string }>
   weight: string
   description: string
 }> = [
