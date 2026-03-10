@@ -54,21 +54,27 @@ export default function AdviserPage() {
             )
           `
 
-        let result = await supabase
+        const withPrivacy = await supabase
           .from('profiles')
           .select(selectWithPrivacy)
           .eq('adviser_id', adviserId)
           .eq('role', 'client')
 
-        if (result.error && result.error.message?.includes('hide_amounts_from_adviser')) {
-          result = await supabase
+        let profiles: typeof withPrivacy.data
+        let profilesError: typeof withPrivacy.error
+
+        if (withPrivacy.error && withPrivacy.error.message?.includes('hide_amounts_from_adviser')) {
+          const withoutPrivacy = await supabase
             .from('profiles')
             .select(selectWithoutPrivacy)
             .eq('adviser_id', adviserId)
             .eq('role', 'client')
+          profiles = withoutPrivacy.data as typeof withPrivacy.data
+          profilesError = withoutPrivacy.error
+        } else {
+          profiles = withPrivacy.data
+          profilesError = withPrivacy.error
         }
-
-        const { data: profiles, error: profilesError } = result
 
         if (profilesError) {
           console.error('Failed to load clients:', profilesError.message)
