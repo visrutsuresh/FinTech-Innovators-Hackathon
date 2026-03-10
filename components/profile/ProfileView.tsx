@@ -17,7 +17,7 @@ interface ProfileRow {
   email: string
   username?: string
   role?: string
-  risk_profile?: string
+  investor_profile?: string
 }
 
 interface AdviserRequest {
@@ -40,11 +40,6 @@ interface NokNomination {
 
 const GOLD = '#C9A227'
 const EMERALD = '#10B981'
-const RISK_COLOR: Record<string, string> = {
-  conservative: EMERALD,
-  moderate: GOLD,
-  aggressive: '#EF4444',
-}
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -188,7 +183,7 @@ export default function ProfileView() {
       // Connected clients
       const { data: clients } = await supabase
         .from('profiles')
-        .select('id, name, email, username, risk_profile')
+        .select('id, name, email, username, investor_profile')
         .eq('adviser_id', user.id)
       setConnectedClients(clients ?? [])
 
@@ -442,8 +437,7 @@ export default function ProfileView() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const username = (user as any).username
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const riskProfile = (user as any).riskProfile
-  const riskColor = RISK_COLOR[riskProfile] ?? GOLD
+  const investorProfile = (user as any).investorProfile
 
   const totalIncoming = incomingAdviserReqs.length + nokForMe.filter(n => n.status === 'pending').length
 
@@ -479,16 +473,16 @@ export default function ProfileView() {
                 >
                   {isAdviser ? 'Adviser' : 'Client'}
                 </span>
-                {!isAdviser && riskProfile && (
+                {!isAdviser && investorProfile && (
                   <span
-                    className="text-xs font-medium px-2.5 py-1 rounded-full capitalize"
+                    className="text-xs font-medium px-2.5 py-1 rounded-full"
                     style={{
-                      background: `${riskColor}12`,
-                      color: riskColor,
-                      border: `1px solid ${riskColor}25`,
+                      background: `${GOLD}12`,
+                      color: GOLD,
+                      border: `1px solid ${GOLD}25`,
                     }}
                   >
-                    {riskProfile} risk
+                    {investorProfile}
                   </span>
                 )}
               </div>
@@ -535,9 +529,9 @@ export default function ProfileView() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              {c.risk_profile && (
-                                <span className="text-[10px] capitalize" style={{ color: RISK_COLOR[c.risk_profile] ?? GOLD }}>
-                                  {c.risk_profile}
+                              {c.investor_profile && (
+                                <span className="text-[10px]" style={{ color: GOLD }}>
+                                  {c.investor_profile}
                                 </span>
                               )}
                               <button

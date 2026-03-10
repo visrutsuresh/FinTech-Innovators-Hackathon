@@ -30,11 +30,6 @@ interface EditableAsset {
   ticker: string    // finageSymbol (stocks) or coinGeckoId (crypto)
 }
 
-const RISK_COLOR: Record<string, string> = {
-  conservative: '#10B981',
-  moderate: '#C9A227',
-  aggressive: '#EF4444',
-}
 
 const ASSET_CLASS_OPTIONS: { value: AssetClass; label: string }[] = [
   { value: AssetClass.CASH, label: 'Cash' },
@@ -292,7 +287,6 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
     )
   }
 
-  const riskColor = RISK_COLOR[client.riskProfile] ?? '#C9A227'
   const editManualTotal = editAssets
     .filter(a => !PRICE_TRACKED.includes(a.assetClass))
     .reduce((s, a) => s + (parseFloat(a.value) || 0), 0)
@@ -319,15 +313,9 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
               <h1 className="text-xl font-bold text-white tracking-tight">{client.name}</h1>
               <p className="text-xs text-white/35">{client.email}</p>
             </div>
-            <span
-              className="text-xs font-medium px-2.5 py-1 rounded-full ml-1 capitalize"
-              style={{ background: `${riskColor}12`, color: riskColor, border: `1px solid ${riskColor}25` }}
-            >
-              {client.riskProfile} risk
-            </span>
             {client.investorProfile && (
               <span
-                className="text-xs font-medium px-2.5 py-1 rounded-full"
+                className="text-xs font-medium px-2.5 py-1 rounded-full ml-1"
                 style={{ background: 'rgba(201,162,39,0.08)', color: '#C9A227', border: '1px solid rgba(201,162,39,0.2)' }}
               >
                 {client.investorProfile}
