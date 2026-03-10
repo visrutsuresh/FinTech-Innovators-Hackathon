@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import Image from 'next/image'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -8,6 +9,9 @@ import { useAuth } from '@/components/layout/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Role, RiskProfile, AssetClass } from '@/types'
 import { GlowingEffect } from '@/components/ui/glowing-effect'
+import shieldIcon from '@/shield.webp'
+import knightIcon from '@/knight.webp'
+import wizardIcon from '@/wizard.webp'
 
 const C = {
   bg:    '#0D0D0D',
@@ -512,10 +516,23 @@ export default function SignupPage() {
             <motion.div key="result" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
               <div className="relative rounded-2xl p-6 text-center" style={{ background: `linear-gradient(145deg, ${C.deepA(0.9)} 0%, rgba(13,13,13,0.97) 100%)`, border: `1px solid ${C.midA(0.2)}` }}>
                 <GlowingEffect spread={50} glow={false} disabled={false} proximity={100} inactiveZone={0.05} borderWidth={2} />
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: C.lightA(0.08), border: `1px solid ${C.lightA(0.2)}` }}>
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={C.light} strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                  </svg>
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 overflow-hidden"
+                  style={{ background: 'rgba(0,0,0,0.7)', border: `1px solid ${C.lightA(0.2)}` }}
+                >
+                  <Image
+                    src={
+                      profile.riskProfile === RiskProfile.CONSERVATIVE
+                        ? shieldIcon
+                        : profile.riskProfile === RiskProfile.MODERATE
+                          ? knightIcon
+                          : wizardIcon
+                    }
+                    alt={profile.name}
+                    width={48}
+                    height={48}
+                    className="object-contain"
+                  />
                 </div>
                 <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: C.midA(0.45) }}>Your investor profile</p>
                 <h2 className="text-xl font-bold mb-3" style={{ color: C.light }}>{profile.name}</h2>
