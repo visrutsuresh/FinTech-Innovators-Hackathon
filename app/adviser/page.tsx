@@ -15,6 +15,8 @@ export default function AdviserPage() {
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
   const [clientsLoading, setClientsLoading] = useState(true)
+  const [clientsError, setClientsError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== Role.ADVISER)) {
@@ -46,9 +48,12 @@ export default function AdviserPage() {
 
         if (profilesError) {
           console.error('Failed to load clients:', profilesError.message)
+          setClientsError('Failed to load clients. Check your connection and try again.')
           setClients([])
+          setClientsLoading(false)
           return
         }
+        setClientsError(null)
 
         if (!profiles?.length) { setClients([]); setClientsLoading(false); return }
 
@@ -61,7 +66,9 @@ export default function AdviserPage() {
           const rawAssets = portfolio?.assets ?? []
           const mappedAssets: Asset[] = rawAssets
             .slice()
-            .sort((a: { value: number }, b: { value: number }) => b.value - a.value)
+            .sort((a: { value: number; name: string }, b: { value: number; name: string }) =>
+              b.value - a.value || a.name.localeCompare(b.name)
+            )
             .map((a: { id: string; name: string; ticker?: string; asset_class: string; value: number; currency?: string; quantity?: number; is_crypto?: boolean; coin_gecko_id?: string; finage_symbol?: string }) => ({
               id: a.id,
               name: a.name,
@@ -101,7 +108,7 @@ export default function AdviserPage() {
     }
 
     loadClients()
-  }, [user])
+  }, [user, retryCount])
 
   if (isLoading || !user) {
     return (
@@ -148,7 +155,23 @@ export default function AdviserPage() {
           </div>
         </motion.div>
 
-        {clientsLoading ? (
+        {clientsError ? (
+          <div
+            className="rounded-2xl p-8 text-center"
+            style={{ background: '#111111', border: '1px solid rgba(239,68,68,0.2)' }}
+          >
+            <p className="text-sm text-red-400 mb-4">{clientsError}</p>
+            <button
+              onClick={() => { setClientsError(null); setRetryCount(c => c + 1) }}
+              className="text-xs px-4 py-2 rounded-xl transition-colors"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.18)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.1)')}
+            >
+              Retry
+            </button>
+          </div>
+        ) : clientsLoading ? (
           <div className="space-y-4">
             {/* Stats skeleton */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

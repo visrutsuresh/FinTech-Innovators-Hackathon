@@ -217,9 +217,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
         return
       }
 
-      await supabase.from('assets').delete().eq('portfolio_id', portfolioData.id)
-
-      // Fetch live prices for tracked assets so we can store a real value
+      // Fetch live prices BEFORE touching the DB — if this fails, existing data is safe
       const stockRows = valid.filter(a => a.assetClass === AssetClass.STOCKS && a.ticker)
       const cryptoRows = valid.filter(a => a.assetClass === AssetClass.CRYPTO && a.ticker)
 
@@ -232,9 +230,11 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
         let value = 0
         if (a.assetClass === AssetClass.STOCKS) {
           const price = (stockPrices as Record<string, number>)[a.ticker.toUpperCase()]
+          if (!price && a.ticker) setSaveError(`Could not fetch price for "${a.ticker.toUpperCase()}" — it will be saved as $0. Check the ticker and try again.`)
           value = price ? price * parseFloat(a.quantity) : 0
         } else if (a.assetClass === AssetClass.CRYPTO) {
           const price = (cryptoPrices as Record<string, { usd: number }>)[a.ticker.toLowerCase()]?.usd
+          if (!price && a.ticker) setSaveError(`Could not fetch price for "${a.ticker}" — it will be saved as $0. Check the coin ID and try again.`)
           value = price ? price * parseFloat(a.quantity) : 0
         } else {
           value = parseFloat(a.value || '0')
@@ -252,6 +252,8 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
         }
       })
 
+      // Delete existing assets only after inserts are fully prepared — atomic swap
+      await supabase.from('assets').delete().eq('portfolio_id', portfolioData.id)
       if (inserts.length > 0) await supabase.from('assets').insert(inserts)
 
       const totalValue = inserts.reduce((s, a) => s + a.value, 0)

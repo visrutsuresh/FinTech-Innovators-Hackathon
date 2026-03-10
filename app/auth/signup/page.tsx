@@ -208,7 +208,7 @@ export default function SignupPage() {
         if (!data.user) throw new Error('Signup failed')
         // Empty identities = email already registered (when confirmation is enabled)
         if (data.user.identities && data.user.identities.length === 0) {
-          setError('User already registered')
+          setError('An account with this email already exists.')
           setLoading(false)
           return
         }

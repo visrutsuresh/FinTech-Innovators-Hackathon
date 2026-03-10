@@ -299,13 +299,23 @@ export default function ProfileView() {
     if (!q.trim()) { setAdviserResults([]); return }
     setAdviserSearching(true)
     adviserTimer.current = setTimeout(async () => {
-      const { data } = await supabase
+      const pendingIds = sentAdviserReqs.map(r => r.client_id).filter(Boolean)
+      const connectedIds = connectedClients.map(c => c.id).filter(Boolean)
+      const excludeIds = [...new Set([...pendingIds, ...connectedIds])]
+
+      let query = supabase
         .from('profiles')
         .select('id, name, email, username, role')
         .ilike('username', `%${q}%`)
         .eq('role', 'client')
         .neq('id', user!.id)
         .limit(6)
+
+      if (excludeIds.length > 0) {
+        query = query.not('id', 'in', `(${excludeIds.join(',')})`)
+      }
+
+      const { data } = await query
       setAdviserResults(data ?? [])
       setAdviserSearching(false)
     }, 300)
@@ -318,12 +328,19 @@ export default function ProfileView() {
     if (!q.trim()) { setNokResults([]); return }
     setNokSearching(true)
     nokTimer.current = setTimeout(async () => {
-      const { data } = await supabase
+      const excludeIds = [user!.id, myNok?.nominee_id].filter(Boolean) as string[]
+
+      let query = supabase
         .from('profiles')
         .select('id, name, email, username, role')
         .ilike('username', `%${q}%`)
-        .neq('id', user!.id)
         .limit(6)
+
+      if (excludeIds.length > 0) {
+        query = query.not('id', 'in', `(${excludeIds.join(',')})`)
+      }
+
+      const { data } = await query
       setNokResults(data ?? [])
       setNokSearching(false)
     }, 300)
@@ -424,6 +441,8 @@ export default function ProfileView() {
         lastUpdated: portfolioRow.last_updated ?? new Date().toISOString(),
       }
       setNokPortfolio({ name: nom.profile?.name ?? 'Unknown', portfolio })
+    } else {
+      setNokPortfolio({ name: nom.profile?.name ?? 'Unknown', portfolio: { assets: [], totalValue: 0, lastUpdated: new Date().toISOString() } })
     }
     setPortfolioLoading(false)
   }

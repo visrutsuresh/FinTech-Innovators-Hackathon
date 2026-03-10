@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { Portfolio, WellnessScore, RiskProfile } from '@/types'
 
 export type FeaturePanelId = 'blackswan' | 'flash' | 'legacy'
@@ -37,7 +37,14 @@ const FeaturePanelContext = createContext<FeaturePanelState>({
 export function FeaturePanelProvider({ children }: { children: ReactNode }) {
   const [activePanel, setActivePanel] = useState<FeaturePanelId | null>(null)
   const [clientCtx, setClientCtx] = useState<ClientCtx | null>(null)
-  const [privacyMode, setPrivacyMode] = useState(false)
+  const [privacyMode, setPrivacyMode] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('huat:privacyMode') === 'true'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('huat:privacyMode', String(privacyMode))
+  }, [privacyMode])
 
   const openPanel = useCallback((id: FeaturePanelId) => setActivePanel(id), [])
   const closePanel = useCallback(() => setActivePanel(null), [])
@@ -46,7 +53,6 @@ export function FeaturePanelProvider({ children }: { children: ReactNode }) {
   const clearClient = useCallback(() => {
     setClientCtx(null)
     setActivePanel(null)
-    setPrivacyMode(false)
   }, [])
 
   return (
