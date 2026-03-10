@@ -203,7 +203,7 @@ export default function AIRecommendations({
           </div>
           <div>
             <p className="text-sm font-semibold text-white">AI Adviser</p>
-            <p className="text-xs text-white/30">Powered by Claude — ask anything</p>
+            <p className="text-xs text-white/30">AI-powered — ask anything</p>
           </div>
         </div>
         {messages.length > 0 && (

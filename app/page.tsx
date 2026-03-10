@@ -24,7 +24,7 @@ const pillars = [
   {
     label: 'AI Insights',
     title: 'Personalised recommendations',
-    body: 'Claude analyses your exact portfolio and surfaces actionable next steps.',
+    body: 'AI analyses your exact portfolio and surfaces actionable next steps.',
     accent: '#6366F1',
   },
 ]
@@ -79,7 +79,7 @@ export default function LandingPage() {
               className="inline-block w-1.5 h-1.5 rounded-full"
               style={{ background: GOLD }}
             />
-            NTU FinTech Innovators Hackathon 2026
+            Wealth Wellness Platform
           </div>
 
           <h1
@@ -93,7 +93,7 @@ export default function LandingPage() {
 
           <p className="text-base sm:text-lg text-white/50 max-w-xl mx-auto mb-10 leading-relaxed">
             Huat unifies your stocks, crypto, cash and private assets, computes a
-            real-time wellness score, and delivers Claude-powered recommendations.
+            real-time wellness score, and delivers AI-powered recommendations.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
@@ -217,7 +217,7 @@ export default function LandingPage() {
       {/* Footer line */}
       <Divider />
       <div className="py-5 text-center text-xs text-white/20">
-        © 2026 Huat — NTU FinTech Innovators Hackathon
+        © 2026 Huat — Wealth Wellness Platform
       </div>
     </div>
   )
