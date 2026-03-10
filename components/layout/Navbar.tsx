@@ -23,7 +23,7 @@ import { GlowingEffect } from '@/components/ui/glowing-effect'
 
 export default function Navbar() {
   const { user, logout, isLoading } = useAuth()
-  const { isOpen: chatOpen, toggle: toggleChat } = useChatPanel()
+  const { isOpen: chatOpen, toggle: toggleChat, close: closeChat } = useChatPanel()
   const { activePanel, clientCtx, privacyMode, openPanel, closePanel, togglePrivacy } = useFeaturePanel()
   const router = useRouter()
   const pathname = usePathname()
@@ -43,11 +43,24 @@ export default function Navbar() {
     router.push('/')
   }
 
-  // Stable toggle — won't go stale because closePanel/openPanel are useCallback from context
+  // Mutually-exclusive toggles — only one right-side panel open at a time
   const togglePanel = useCallback((id: FeaturePanelId) => {
-    if (activePanel === id) closePanel()
-    else openPanel(id)
-  }, [activePanel, closePanel, openPanel])
+    if (activePanel === id) {
+      closePanel()
+    } else {
+      closeChat()   // dismiss AI chat before opening a feature panel
+      openPanel(id)
+    }
+  }, [activePanel, closeChat, closePanel, openPanel])
+
+  const handleToggleChat = useCallback(() => {
+    if (chatOpen) {
+      closeChat()
+    } else {
+      closePanel()  // dismiss any feature panel before opening AI chat
+      toggleChat()
+    }
+  }, [chatOpen, closeChat, closePanel, toggleChat])
 
   // Are we already on a dashboard? → hide the Home tab
   const onAdviserDashboard = pathname === '/adviser'
@@ -83,21 +96,21 @@ export default function Navbar() {
     { title: 'Black Swan', icon: TrendingDown, onClick: () => togglePanel('blackswan') },
     { title: 'Liquidity',  icon: Zap,          onClick: () => togglePanel('flash') },
     { title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') },
-    { title: 'AI Adviser', icon: Sparkles,     onClick: toggleChat },
+    { title: 'AI Adviser', icon: Sparkles,     onClick: handleToggleChat },
     { type: 'separator' },
     { title: 'Privacy',    icon: privacyMode ? EyeOff : Eye, onClick: togglePrivacy },
     { title: 'Profile',    icon: User,         onClick: handleProfileClick },
-  ], [togglePanel, privacyMode, togglePrivacy, handleProfileClick, toggleChat])
+  ], [togglePanel, privacyMode, togglePrivacy, handleProfileClick, handleToggleChat])
 
   // ADVISER overview — omit Home when already on /adviser
   const adviserTabs: TabItem[] = useMemo(() => {
     const items: TabItem[] = []
     if (!onAdviserDashboard) items.push({ title: 'Dashboard', icon: Home, onClick: () => router.push('/adviser') })
-    items.push({ title: 'AI Adviser', icon: Sparkles, onClick: toggleChat })
+    items.push({ title: 'AI Adviser', icon: Sparkles, onClick: handleToggleChat })
     items.push({ type: 'separator' })
     items.push({ title: 'Profile', icon: User, onClick: handleProfileClick })
     return items
-  }, [onAdviserDashboard, handleProfileClick, toggleChat])
+  }, [onAdviserDashboard, handleProfileClick, handleToggleChat])
 
   // CLIENT — omit Home when already on their own dashboard
   const clientTabs: TabItem[] = useMemo(() => {
@@ -106,11 +119,11 @@ export default function Navbar() {
     items.push({ title: 'Black Swan', icon: TrendingDown, onClick: () => togglePanel('blackswan') })
     items.push({ title: 'Liquidity',  icon: Zap,          onClick: () => togglePanel('flash') })
     items.push({ title: 'Legacy',     icon: ScrollText,   onClick: () => togglePanel('legacy') })
-    items.push({ title: 'AI Adviser', icon: Sparkles,     onClick: toggleChat })
+    items.push({ title: 'AI Adviser', icon: Sparkles,     onClick: handleToggleChat })
     items.push({ type: 'separator' })
     items.push({ title: 'Profile',    icon: User,         onClick: handleProfileClick })
     return items
-  }, [onClientDashboard, user?.id, togglePanel, handleProfileClick, toggleChat])
+  }, [onClientDashboard, user?.id, togglePanel, handleProfileClick, handleToggleChat])
 
   // tabs must be declared before activeIndex (which reads it)
   const tabs =
