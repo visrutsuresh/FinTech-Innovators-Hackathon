@@ -12,7 +12,7 @@ const TIER: Record<AssetClass, 1 | 2 | 3> = {
   [AssetClass.CASH]: 1,
   [AssetClass.STOCKS]: 2,
   [AssetClass.BONDS]: 2,
-  [AssetClass.CRYPTO]: 2,
+  [AssetClass.CRYPTO]: 3,
   [AssetClass.REAL_ESTATE]: 3,
   [AssetClass.PRIVATE]: 3,
 }
@@ -61,7 +61,7 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
       sublabel: '2–3 days',
       value: liquid,
       color: TIER_COLOR[1],
-      desc: '+ Stocks, Crypto, Bonds',
+      desc: '+ Stocks, Bonds',
       icon: (
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -73,7 +73,7 @@ export default function FlashLiquidityScorecard({ portfolio }: Props) {
       sublabel: 'All assets',
       value: tier1 + tier2 + tier3,
       color: TIER_COLOR[2],
-      desc: '+ Real Estate, Private',
+      desc: '+ Crypto, Real Estate, Private',
       icon: (
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
