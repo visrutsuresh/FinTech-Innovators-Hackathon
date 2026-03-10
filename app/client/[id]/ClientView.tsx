@@ -12,6 +12,7 @@ import WealthWallet from '@/components/WealthWallet'
 import WellnessScorecard from '@/components/wellness/WellnessScorecard'
 import ScoreBreakdown from '@/components/wellness/ScoreBreakdown'
 import AIRecommendations from '@/components/AIRecommendations'
+import { useFeaturePanel } from '@/components/layout/FeaturePanelContext'
 
 interface ClientViewProps {
   client: Client
@@ -74,6 +75,8 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
 
+  const { privacyMode, registerClient, clearClient } = useFeaturePanel()
+
   const [livePortfolio, setLivePortfolio] = useState<Portfolio>(client.portfolio)
   const [liveScore, setLiveScore] = useState<WellnessScore>(wellnessScore)
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
@@ -84,6 +87,19 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
   const [editAssets, setEditAssets] = useState<EditableAsset[]>([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+
+  // Keep feature panel context in sync with live portfolio data
+  useEffect(() => {
+    registerClient({
+      portfolio: livePortfolio,
+      wellnessScore: liveScore,
+      riskProfile: client.riskProfile,
+      clientId: client.id,
+    })
+  }, [livePortfolio, liveScore, client.riskProfile, client.id, registerClient])
+
+  // Clear feature panel data when leaving this page
+  useEffect(() => () => clearClient(), [clearClient])
 
   // Auth guard
   useEffect(() => {
@@ -359,7 +375,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="lg:col-span-3">
             <Card className="p-6 h-full">
               <SectionTitle>Wealth Wallet</SectionTitle>
-              <WealthWallet portfolio={livePortfolio} />
+              <WealthWallet portfolio={livePortfolio} privacyMode={privacyMode} />
             </Card>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-2">

@@ -32,9 +32,10 @@ function formatQuantity(q: number): string {
 
 interface WealthWalletProps {
   portfolio: Portfolio
+  privacyMode?: boolean
 }
 
-export default function WealthWallet({ portfolio }: WealthWalletProps) {
+export default function WealthWallet({ portfolio, privacyMode = false }: WealthWalletProps) {
   const classMap: Record<string, number> = {}
   for (const asset of portfolio.assets) {
     classMap[asset.assetClass] = (classMap[asset.assetClass] || 0) + asset.value
@@ -46,9 +47,16 @@ export default function WealthWallet({ portfolio }: WealthWalletProps) {
     <div className="space-y-5">
       {/* Net worth */}
       <div>
-        <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Total value</p>
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-xs text-white/30 uppercase tracking-widest">Total value</p>
+          {privacyMode && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium" style={{ background: 'rgba(201,162,39,0.12)', color: '#C9A227' }}>
+              Privacy On
+            </span>
+          )}
+        </div>
         <div className="text-3xl font-bold" style={{ color: '#C9A227', letterSpacing: '-0.02em' }}>
-          $<AnimatedCounter value={portfolio.totalValue} decimals={2} duration={1200} />
+          {privacyMode ? '••••••' : (<>$<AnimatedCounter value={portfolio.totalValue} decimals={2} duration={1200} /></>)}
         </div>
         <p className="text-xs text-white/25 mt-1">
           Updated {new Date(portfolio.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -117,18 +125,20 @@ export default function WealthWallet({ portfolio }: WealthWalletProps) {
                   style={{ background: CLASS_COLORS[asset.assetClass] ?? '#666' }}
                 />
                 <span className="text-xs text-white/70 truncate">
-                  {asset.quantity != null && asset.quantity > 0
-                    ? `${formatQuantity(asset.quantity)} × ${asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId ?? asset.name}`
-                    : asset.name}
+                  {privacyMode
+                    ? CLASS_LABELS[asset.assetClass] ?? asset.assetClass
+                    : asset.quantity != null && asset.quantity > 0
+                      ? `${formatQuantity(asset.quantity)} × ${asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId ?? asset.name}`
+                      : asset.name}
                 </span>
-                {(asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId) && asset.quantity == null && (
+                {!privacyMode && (asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId) && asset.quantity == null && (
                   <span className="text-xs text-white/25 flex-shrink-0">
                     {asset.ticker ?? asset.finageSymbol ?? asset.coinGeckoId}
                   </span>
                 )}
               </div>
               <span className="text-xs font-medium text-white/80 flex-shrink-0 ml-2">
-                {formatCurrency(asset.value)}
+                {privacyMode ? '••••' : formatCurrency(asset.value)}
               </span>
             </motion.div>
           ))}
