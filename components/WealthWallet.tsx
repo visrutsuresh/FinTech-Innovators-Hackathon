@@ -41,6 +41,9 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
     classMap[asset.assetClass] = (classMap[asset.assetClass] || 0) + asset.value
   }
 
+  // Always compute from live asset values — never trust the DB-stored totalValue
+  const liveTotal = portfolio.assets.reduce((s, a) => s + a.value, 0)
+
   const sorted = Object.entries(classMap).sort((a, b) => b[1] - a[1])
 
   return (
@@ -65,7 +68,7 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
           style={{ color: '#C9A227', letterSpacing: '-0.03em' }}
         >
           {privacyMode ? '••••••' : (
-            <>$<AnimatedCounter value={portfolio.totalValue} decimals={2} duration={1200} /></>
+            <>$<AnimatedCounter value={liveTotal} decimals={2} duration={1200} /></>
           )}
         </div>
         <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.22)' }}>
@@ -76,12 +79,12 @@ export default function WealthWallet({ portfolio, privacyMode = false }: WealthW
       {/* Donut + allocation */}
       <div className="flex items-center gap-5">
         <div style={{ width: 156, flexShrink: 0 }}>
-          <AssetDonut assets={portfolio.assets} totalValue={portfolio.totalValue} />
+          <AssetDonut assets={portfolio.assets} totalValue={liveTotal} />
         </div>
 
         <div className="flex-1 space-y-2.5 min-w-0">
           {sorted.map(([cls, value], i) => {
-            const pct = portfolio.totalValue > 0 ? (value / portfolio.totalValue) * 100 : 0
+            const pct = liveTotal > 0 ? (value / liveTotal) * 100 : 0
             const color = CLASS_COLORS[cls] ?? '#666'
             return (
               <motion.div

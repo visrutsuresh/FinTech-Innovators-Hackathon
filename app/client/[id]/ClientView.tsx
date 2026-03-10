@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
@@ -77,9 +77,13 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
   const { privacyMode, registerClient, clearClient } = useFeaturePanel()
 
   const [livePortfolio, setLivePortfolio] = useState<Portfolio>(client.portfolio)
+  const livePortfolioRef = useRef<Portfolio>(client.portfolio)
   const [liveScore, setLiveScore] = useState<WellnessScore>(wellnessScore)
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
+
+  // Keep ref in sync so refreshPrices always reads the latest portfolio without stale closure
+  useEffect(() => { livePortfolioRef.current = livePortfolio }, [livePortfolio])
 
   // Portfolio management modal
   const [manageOpen, setManageOpen] = useState(false)
@@ -111,18 +115,27 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
 
   const refreshPrices = useCallback(async () => {
     try {
-      const stockSymbols = client.portfolio.assets
+      // Always read from the ref so we use the latest portfolio (not the frozen client snapshot)
+      const currentAssets = livePortfolioRef.current.assets
+
+      const stockSymbols = currentAssets
         .filter(a => a.assetClass === AssetClass.STOCKS && a.finageSymbol)
         .map(a => a.finageSymbol as string)
 
+      const coinIds = currentAssets
+        .filter(a => a.isCrypto && a.coinGeckoId)
+        .map(a => a.coinGeckoId as string)
+
       const [cryptoPrices, stockPrices] = await Promise.all([
-        fetch('/api/crypto').then(r => r.ok ? r.json() : {}).catch(() => ({})),
+        coinIds.length > 0
+          ? fetch(`/api/crypto?ids=${coinIds.join(',')}`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+          : Promise.resolve({}),
         stockSymbols.length > 0
           ? fetch(`/api/stocks?symbols=${stockSymbols.join(',')}`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
           : Promise.resolve({}),
       ])
 
-      const updatedAssets = client.portfolio.assets.map(asset => {
+      const updatedAssets = currentAssets.map(asset => {
         if (asset.isCrypto && asset.coinGeckoId) {
           const live = (cryptoPrices as Record<string, { usd: number }>)[asset.coinGeckoId]
           if (live?.usd) return { ...asset, value: live.usd * (asset.quantity ?? 1) }
@@ -134,10 +147,12 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
         return asset
       })
 
+      // totalValue is always the live sum — never trust the DB-stored value
+      const totalValue = updatedAssets.reduce((s, a) => s + a.value, 0)
       const updated: Portfolio = {
-        ...client.portfolio,
+        ...livePortfolioRef.current,
         assets: updatedAssets,
-        totalValue: updatedAssets.reduce((s, a) => s + a.value, 0),
+        totalValue,
         lastUpdated: new Date().toISOString(),
       }
 
@@ -147,7 +162,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
     } catch (err) {
       console.error('Price refresh failed:', err)
     }
-  }, [client])
+  }, [client.riskProfile])
 
   useEffect(() => {
     if (manageOpen) return // Pause refresh while user is editing to avoid stale state on save
