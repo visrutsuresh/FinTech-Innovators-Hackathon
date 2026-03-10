@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import { motion, animate, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/components/layout/AuthContext'
+import { mockClients } from '@/lib/mock-data'
 
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
 import { GlowingEffect } from '@/components/ui/glowing-effect'
@@ -62,11 +63,8 @@ const pillars = [
   },
 ]
 
-const metrics = [
-  { value: 1.02, prefix: '$', suffix: 'M+', label: 'Assets under tracking', decimals: 2 },
-  { value: 5,    prefix: '',  suffix: '',   label: 'Client profiles',        decimals: 0 },
-  { value: 99.9, prefix: '',  suffix: '%',  label: 'AI insight accuracy',    decimals: 1 },
-]
+const STATIC_CLIENT_COUNT = mockClients.length
+const STATIC_TOTAL_ASSETS = mockClients.reduce((sum, c) => sum + c.portfolio.totalValue, 0)
 
 const LEFT_NODES  = [
   { label: 'AAPL',   value: '$142.5',  delay: 0.85 },
@@ -186,13 +184,13 @@ function FloatNode({
       {/* Label */}
       <div style={{ [side === 'left' ? 'marginLeft' : 'marginRight']: 0 }}>
         <motion.p
-          animate={{ color: hovered ? C.light : C.lightA(0.5) }}
+          animate={{ color: hovered ? C.light : C.lightA(0.85) }}
           transition={{ duration: 0.2 }}
           className="text-[14px] font-semibold leading-tight"
         >
           {side === 'right' ? `${node.label} ·` : `· ${node.label}`}
         </motion.p>
-        <p className="text-[13px] tabular-nums leading-tight" style={{ color: C.midA(0.5) }}>
+        <p className="text-[13px] tabular-nums leading-tight" style={{ color: C.lightA(0.7) }}>
           {node.value}
         </p>
       </div>
@@ -436,6 +434,38 @@ export default function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null)
   const pageRef = useRef<HTMLDivElement>(null)
 
+  // Derived landing metrics (static for demo, but driven off shared mock data)
+  const { totalAssets, clientCount, avgPerClient } = useMemo(() => {
+    const totalAssets = STATIC_TOTAL_ASSETS
+    const clientCount = STATIC_CLIENT_COUNT
+    const avgPerClient = clientCount > 0 ? totalAssets / clientCount : 0
+    return { totalAssets, clientCount, avgPerClient }
+  }, [])
+
+  const metrics = [
+    {
+      value: totalAssets / 1_000_000,
+      prefix: '$',
+      suffix: 'M+',
+      label: 'Assets under tracking',
+      decimals: 2,
+    },
+    {
+      value: clientCount,
+      prefix: '',
+      suffix: '',
+      label: 'Client profiles',
+      decimals: 0,
+    },
+    {
+      value: avgPerClient / 1_000,
+      prefix: '$',
+      suffix: 'K',
+      label: 'Avg. assets per client',
+      decimals: 1,
+    },
+  ] as const
+
   // Scroll parallax
   const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
   const heroContentY = useTransform(heroScroll, [0, 1], [0, 50])
@@ -577,14 +607,14 @@ export default function LandingPage() {
                 }}
               >
                 <span style={{ color: C.white, display: 'block' }}>Wealth wellness</span>
-                <span style={{ color: C.lightA(0.45), display: 'block', marginTop: '20px' }}>for every asset you own.</span>
+                <span style={{ color: C.lightA(0.88), display: 'block', marginTop: '20px' }}>for every asset you own.</span>
                 <span
                   style={{
                     display: 'block',
                     fontSize: '0.52em',
                     fontWeight: 400,
                     marginTop: '0.4em',
-                    color: C.midA(0.55),
+                    color: C.lightA(0.85),
                     letterSpacing: '-0.01em',
                   }}
                 >
@@ -612,7 +642,7 @@ export default function LandingPage() {
               animate={mounted ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.56, duration: 0.55, ease: E }}
               className="text-[17px] leading-relaxed mx-auto mb-9"
-              style={{ color: C.midA(0.55) }}
+              style={{ color: C.lightA(0.8) }}
             >
               Unified portfolio tracking, real‑time wellness scoring, and Claude‑powered AI recommendations.
             </motion.p>
@@ -670,7 +700,7 @@ export default function LandingPage() {
               transition={{ duration: 0.2 }}
               className="flex items-center px-6 py-3 cursor-default"
               style={{
-                color: C.midA(0.4),
+                color: C.lightA(0.8),
                 borderRight: i < ASSET_CLASSES.length - 1 ? `1px solid ${C.deepA(0.8)}` : 'none',
                 fontSize: 11,
                 letterSpacing: '0.07em',
@@ -716,7 +746,7 @@ export default function LandingPage() {
                 <AnimatedCounter value={m.value} decimals={m.decimals} duration={1200} />
                 {m.suffix}
               </motion.p>
-              <p className="text-[15px] tracking-wide" style={{ color: C.midA(0.45) }}>{m.label}</p>
+              <p className="text-[15px] tracking-wide" style={{ color: C.lightA(0.85) }}>{m.label}</p>
             </motion.div>
           ))}
         </div>
@@ -751,7 +781,7 @@ export default function LandingPage() {
           >
             <motion.p
               className="text-[13px] font-semibold uppercase tracking-[0.22em] mb-4"
-              style={{ color: C.midA(0.45) }}
+              style={{ color: C.lightA(0.85) }}
             >
               Core capabilities
             </motion.p>
@@ -846,7 +876,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
             transition={{ delay: 0.25 }}
             className="text-[17px] mb-10"
-            style={{ color: C.midA(0.5) }}
+            style={{ color: C.lightA(0.8) }}
           >
             Sign in with a demo account and explore the full platform in under a minute.
           </motion.p>
@@ -892,7 +922,7 @@ export default function LandingPage() {
         transition={{ duration: 1.0, ease: E }}
         style={{ height: 1, background: `linear-gradient(90deg, transparent, ${C.deepA(0.7)}, transparent)` }}
       />
-      <div className="py-6 text-center" style={{ color: C.midA(0.3), fontSize: 11, letterSpacing: '0.05em' }}>
+      <div className="py-6 text-center" style={{ color: C.lightA(0.7), fontSize: 11, letterSpacing: '0.05em' }}>
         © 2026 Huat — Wealth Wellness Platform · NTU FinTech Innovators Hackathon
       </div>
     </div>
