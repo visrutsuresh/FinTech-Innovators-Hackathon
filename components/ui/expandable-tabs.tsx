@@ -78,8 +78,9 @@ export function ExpandableTabs({
       className={cn("flex items-center gap-0.5 rounded-xl p-1", className)}
       style={{
         background: "rgba(26,30,36,0.5)",
-        border: "1px solid rgba(223,208,184,0.07)",
+        border: "1px solid rgba(223,208,184,0.12)",
         backdropFilter: "blur(16px)",
+        overflow: "visible",
       }}
     >
       {tabs.map((tab, index) => {
@@ -109,14 +110,59 @@ export function ExpandableTabs({
             transition={transition}
             className="relative flex items-center rounded-lg text-sm font-medium py-1.5 cursor-pointer flex-shrink-0"
             style={{
-              background: isSelected ? "rgba(223,208,184,0.10)" : "transparent",
-              color: isSelected ? "#DFD0B8" : "rgba(255,255,255,0.38)",
+              background: isSelected ? "rgba(223,208,184,0.08)" : "transparent",
+              color: isSelected ? "#DFD0B8" : "rgba(255,255,255,0.68)",
               border: isSelected
-                ? "1px solid rgba(223,208,184,0.18)"
+                ? "1px solid rgba(223,208,184,0.15)"
                 : "1px solid transparent",
               transition: "color 0.2s ease, background 0.2s ease, border-color 0.2s ease",
+              overflow: "visible",
             }}
           >
+            {/* Tubelight lamp indicator */}
+            {isSelected && (
+              <motion.div
+                layoutId="lamp"
+                className="absolute inset-0 rounded-lg -z-10"
+                initial={false}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                {/* Bar at bottom edge, glow drips downward */}
+                <div
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-b-full"
+                  style={{ width: 28, height: 3, background: "#DFD0B8", bottom: -2 }}
+                >
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      width: 40, height: 10,
+                      background: "rgba(223,208,184,0.25)",
+                      filter: "blur(6px)",
+                      top: 2, left: -6,
+                    }}
+                  />
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      width: 28, height: 14,
+                      background: "rgba(223,208,184,0.15)",
+                      filter: "blur(10px)",
+                      top: 4, left: 0,
+                    }}
+                  />
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      width: 14, height: 10,
+                      background: "rgba(223,208,184,0.12)",
+                      filter: "blur(8px)",
+                      top: 6, left: 7,
+                    }}
+                  />
+                </div>
+              </motion.div>
+            )}
+
             <Icon size={15} strokeWidth={1.8} />
             <AnimatePresence initial={false}>
               {isSelected && (

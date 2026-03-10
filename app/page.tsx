@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth, Role } from '@/components/layout/AuthContext'
+import { useAuth } from '@/components/layout/AuthContext'
+
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
 import { GlowingEffect } from '@/components/ui/glowing-effect'
 
@@ -281,8 +281,7 @@ function PillarCard({ p, i }: { p: typeof pillars[0] & { accentBright?: string }
 // ── Main component ────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
+  const { user } = useAuth()
   const heroRef = useRef<HTMLDivElement>(null)
   const pageRef = useRef<HTMLDivElement>(null)
 
@@ -300,12 +299,6 @@ export default function LandingPage() {
 
   useEffect(() => setMounted(true), [])
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      if (user.role === Role.ADVISER) router.replace('/adviser')
-      else router.replace(`/client/${user.id}`)
-    }
-  }, [user, isLoading, router])
 
   const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect()

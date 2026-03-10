@@ -235,13 +235,14 @@ export default function LoginPage() {
         </div>
 
         <div
-          className="mt-3 rounded-2xl px-6 py-3.5 text-center text-xs"
+          className="relative mt-3 rounded-2xl px-6 py-3.5 text-center text-xs"
           style={{
             background: `linear-gradient(145deg, ${C.deepA(0.85)} 0%, rgba(13,13,13,0.95) 100%)`,
             border: `1px solid ${C.midA(0.16)}`,
             color: C.midA(0.45),
           }}
         >
+          <GlowingEffect spread={50} glow={false} disabled={false} proximity={80} inactiveZone={0.05} borderWidth={2} />
           No account?{' '}
           <Link
             href="/auth/signup"
