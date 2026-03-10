@@ -245,7 +245,7 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
       // Look up (or lazily create) the client's portfolio row.
       let portfolioId: string | null = null
 
-      const { data: portfolioData, error: pErr } = await supabase
+      let { data: portfolioData, error: pErr } = await supabase
         .from('portfolios')
         .select('id')
         .eq('client_id', client.id)
@@ -254,8 +254,8 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
       if (portfolioData?.id) {
         portfolioId = portfolioData.id
       } else {
-        // If the client somehow doesn't have a portfolio row yet (e.g. legacy seed),
-        // create a minimal one so we can attach assets to it.
+        // If the client somehow doesn't have a portfolio row yet (e.g. race right after signup),
+        // create one. If we get unique violation, the row exists — retry select once.
         const { data: created, error: cErr } = await supabase
           .from('portfolios')
           .insert({
@@ -266,14 +266,19 @@ export default function ClientView({ client, wellnessScore }: ClientViewProps) {
           .select('id')
           .single()
 
-        if (cErr || !created?.id) {
+        if (created?.id) {
+          portfolioId = created.id
+        } else if (cErr?.code === '23505') {
+          const { data: retry } = await supabase
+            .from('portfolios')
+            .select('id')
+            .eq('client_id', client.id)
+            .single()
+          portfolioId = retry?.id ?? null
+        }
+        if (!portfolioId) {
           throw new Error('Unable to create portfolio for this client.')
         }
-        portfolioId = created.id
-      }
-
-      if (!portfolioId) {
-        throw new Error('Unable to resolve portfolio for this client.')
       }
 
       const allValid = editAssets.every(a => {

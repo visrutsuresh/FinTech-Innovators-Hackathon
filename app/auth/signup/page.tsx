@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/layout/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Role, RiskProfile, AssetClass } from '@/types'
+import type { Client, Asset } from '@/types'
 import { GlowingEffect } from '@/components/ui/glowing-effect'
 import shieldIcon from '@/shield.webp'
 import knightIcon from '@/knight.webp'
@@ -250,8 +251,8 @@ export default function SignupPage() {
     .reduce((s, r) => s + parseFloat(r.value || '0'), 0)
   const liveCount = validRows.filter(r => PRICE_TRACKED.includes(r.assetClass)).length
 
-  /** Copy template assets for the given risk profile into the new portfolio. Single batch insert. */
-  const copyTemplateToPortfolio = async (portfolioId: string, riskProfile: string) => {
+  /** Copy template assets for the given risk profile into the new portfolio. Returns total and assets for immediate client state. */
+  const copyTemplateToPortfolio = async (portfolioId: string, riskProfile: string): Promise<{ total: number; assets: Asset[] }> => {
     const { data: templates } = await supabase
       .from('portfolio_templates')
       .select('*')
@@ -273,7 +274,19 @@ export default function SignupPage() {
       : [{ portfolio_id: portfolioId, name: 'Cash', asset_class: 'cash', value: 0, currency: 'USD', quantity: null, finage_symbol: null, coin_gecko_id: null, is_crypto: false }]
 
     await supabase.from('assets').insert(rows)
-    return rows.reduce((s, a) => s + a.value, 0)
+    const total = rows.reduce((s, a) => s + a.value, 0)
+    const assets: Asset[] = rows.map((a, i) => ({
+      id: `local-${i}`,
+      name: a.name,
+      assetClass: a.asset_class as AssetClass,
+      value: a.value,
+      currency: a.currency ?? 'USD',
+      quantity: a.quantity != null ? Number(a.quantity) : undefined,
+      isCrypto: Boolean(a.is_crypto),
+      coinGeckoId: a.coin_gecko_id ?? undefined,
+      finageSymbol: a.finage_symbol ?? undefined,
+    }))
+    return { total, assets }
   }
 
   const handleComplete = async (skip = false) => {
@@ -323,17 +336,47 @@ export default function SignupPage() {
       ])
 
       // Round 2: insert assets (user-entered or template)
+      let builtAssets: Asset[] = []
+      let portfolioTotal = manualTotal
+
       if (skip) {
-        // copyTemplateToPortfolio inserts the assets and returns the real total —
-        // update the portfolio row so total_value reflects the template data
-        const templateTotal = await copyTemplateToPortfolio(portfolioId, profile.riskProfile)
-        await supabase.from('portfolios').update({ total_value: templateTotal }).eq('id', portfolioId)
+        const { total, assets: templateAssets } = await copyTemplateToPortfolio(portfolioId, profile.riskProfile)
+        portfolioTotal = total
+        builtAssets = templateAssets
+        await supabase.from('portfolios').update({ total_value: total }).eq('id', portfolioId)
       } else if (assetInserts.length > 0) {
         await supabase.from('assets').insert(assetInserts)
+        builtAssets = assetInserts.map((a, i) => ({
+          id: `local-${i}`,
+          name: a.name,
+          assetClass: a.asset_class as AssetClass,
+          value: a.value,
+          currency: 'USD',
+          quantity: a.quantity != null ? Number(a.quantity) : undefined,
+          isCrypto: Boolean(a.is_crypto),
+          coinGeckoId: a.coin_gecko_id ?? undefined,
+          finageSymbol: a.finage_symbol ?? undefined,
+        }))
       }
 
-      // login() signs in AND sets AuthContext.user — page.tsx fast path kicks in immediately
-      await login(email, password)
+      // Pass the client we just created into login so the client page has correct data immediately
+      // (avoids race where fetchUserProfile runs before new rows are visible)
+      const builtClient: Client = {
+        id: userId,
+        name,
+        email,
+        password: '',
+        role: Role.CLIENT,
+        riskProfile: profile.riskProfile,
+        investorProfile: profile.name,
+        username: username.toLowerCase().trim(),
+        portfolio: {
+          assets: builtAssets,
+          totalValue: portfolioTotal,
+          lastUpdated: new Date().toISOString(),
+        },
+      }
+      await login(email, password, builtClient)
       router.push(`/client/${userId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

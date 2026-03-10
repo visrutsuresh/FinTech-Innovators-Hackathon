@@ -10,7 +10,8 @@ interface AuthState {
   isLoading: boolean
   /** True only during an explicit logout flow so guards can avoid redirect flicker */
   isLoggingOut: boolean
-  login: (email: string, password: string) => Promise<User>
+  /** Sign in and optionally set user from signup (avoids refetch race right after signup) */
+  login: (email: string, password: string, userAfterSignup?: User) => Promise<User>
   logout: () => Promise<void>
 }
 
@@ -18,7 +19,7 @@ const AuthContext = createContext<AuthState>({
   user: null,
   isLoading: true,
   isLoggingOut: false,
-  login: async () => { throw new Error('AuthProvider not mounted') },
+  login: async (_email: string, _password: string, _userAfterSignup?: User) => { throw new Error('AuthProvider not mounted') },
   logout: async () => {},
 })
 
@@ -127,10 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [loadUser])
 
-  const login = async (email: string, password: string): Promise<User> => {
+  const login = async (email: string, password: string, userAfterSignup?: User): Promise<User> => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error(error.message)
-    const appUser = await fetchUserProfile(data.user.id)
+    const appUser = userAfterSignup ?? (await fetchUserProfile(data.user.id))
     if (!appUser) throw new Error('Account found but profile is missing. Please contact support.')
     setUser(appUser)
     return appUser
