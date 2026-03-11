@@ -316,6 +316,28 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Seed demo data by visiting `/api/seed` once.
 
+### Run with Docker
+
+Make sure `.env.local` is populated, then:
+
+```bash
+docker compose up --build
+```
+
+The app will be available at [http://localhost:3000](http://localhost:3000). The compose file mounts `.env.local` directly, so no extra flags are needed.
+
+To build the image manually:
+
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_APP_URL=http://localhost:3000 \
+  -t huat .
+
+docker run -p 3000:3000 --env-file .env.local huat
+```
+
+The Dockerfile uses a **multi-stage build** (deps → builder → runner) on `node:20-alpine`, producing a minimal production image. The final stage runs as a non-root `nextjs` user and serves the Next.js standalone output via `node server.js`.
+
 ### Deploy to Vercel
 
 Add the same environment variables in your Vercel project settings, then push to your connected repository or run:
