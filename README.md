@@ -1,302 +1,152 @@
-# Huat — Wealth Wellness Hub
+<h1 align="center">
+<b>Huat</b><br/>
+<p style="font-size:16px;font-weight:normal;">✨ Your whole financial life — and how healthy it really is — on one screen ✨</p>
+</h1>
 
-> **NTU FinTech Innovators Hackathon 2026 · Problem Statement #1**
+<div align="center">
+<p>NTU FinTech Innovators Hackathon 2026 · Problem Statement #1 · Wealth Wellness Hub</p>
 
-Huat is an integrated financial wellness platform that unifies a client's traditional and digital assets into a single dashboard, computes a composite **Wellness Score** using portfolio theory and behavioural finance principles, and delivers real-time AI-powered recommendations via Claude. Built for both retail investors and their wealth advisers.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-000000?style=for-the-badge&logo=vercel&logoColor=FFFFFF&labelColor=222222)](https://fin-tech-innovators-hackathon-gny2.vercel.app/)
+&nbsp;
+[![Next.js](https://img.shields.io/badge/Next.js%2016-000000?style=for-the-badge&logo=nextdotjs&logoColor=FFFFFF&labelColor=222222)](#system-overview)
+&nbsp;
+[![Claude AI](https://img.shields.io/badge/Claude%20AI-D97757?style=for-the-badge&logo=anthropic&logoColor=FFFFFF&labelColor=222222)](#ai-adviser-claude)
 
----
+👆 Try the live demo above! 👆
 
-## Live Demo
+<p align="center">
+<a href="#introduction">Introduction</a> &nbsp;&bull;&nbsp;
+<a href="#project-structure">Project Structure</a> &nbsp;&bull;&nbsp;
+<a href="#system-overview">System Overview</a> &nbsp;&bull;&nbsp;
+<a href="#getting-started">Getting Started</a>
+</p>
+</div>
 
-**Deployment:** [https://huat.vercel.app](https://fin-tech-innovators-hackathon-gny2.vercel.app/)) 
+## Introduction
 
-All demo accounts share password: `demo123`
+Most people's money is scattered — some stocks in one app, crypto in another, a property, a pension, cash in the bank — and **no single place tells them whether the whole picture is actually healthy.** Advisers face the same blind spot: they only see the slice of a client's wealth that sits with them.
+
+***Huat*** is a **financial wellness platform** that pulls a client's traditional *and* digital assets into one dashboard and answers the question that really matters — *not just "how much do I have?" but "how healthy is my financial position?"* It does this with a single composite **Wellness Score (0–100)** built from portfolio theory and behavioural finance, and a built-in **AI adviser powered by Claude** that gives real, context-aware recommendations.
+
+Built for **two audiences at once**: retail investors get a clear health read on their own money, and **wealth advisers** get a roster view of every connected client, with low-wellness alerts and direct messaging. The platform also includes **stress-testing tools** — a Black Swan crisis simulator, a tiered liquidity stress test, and an estate-planning readiness checklist — so users can see how their position holds up under pressure, not just on a calm day.
+
+> 🔗 **Live demo:** https://fin-tech-innovators-hackathon-gny2.vercel.app/
+> All demo accounts share the public demo password `demo123` *(intentional throwaway credentials for the hackathon demo — not real secrets)*.
+
+### Demo Accounts
 
 | Email | Role | Portfolio Profile | AUM |
 |---|---|---|---|
-| adviser@demo.com | Adviser | — | Manages all 5 clients |
-| alex@demo.com | Client | Aggressive | ~$141K — BTC/ETH/SOL heavy |
-| sarah@demo.com | Client | Moderate | ~$176K — AAPL, MSFT, SPY balanced |
-| raymond@demo.com | Client | Conservative | ~$268K — Cash + bonds heavy |
-| priya@demo.com | Client | Moderate | ~$215K — REITs + QQQ + crypto |
-| marcus@demo.com | Client | Aggressive | ~$223K — Startup equity + BTC |
+| `adviser@demo.com` | Adviser | — | Manages all 5 clients |
+| `alex@demo.com` | Client | Aggressive | ~$141K — BTC/ETH/SOL heavy |
+| `sarah@demo.com` | Client | Moderate | ~$176K — AAPL, MSFT, SPY balanced |
+| `raymond@demo.com` | Client | Conservative | ~$268K — Cash + bonds heavy |
+| `priya@demo.com` | Client | Moderate | ~$215K — REITs + QQQ + crypto |
+| `marcus@demo.com` | Client | Aggressive | ~$223K — Startup equity + BTC |
 
-**Total tracked AUM: ~$1.02M**
+**Total tracked AUM across demo clients: ~$1.02M**
 
----
+## Project Structure
 
-## Features
+- `app/`
+  **Next.js App Router** — pages, layout, and global styles.
+  - `page.tsx` Landing / dashboard entry.
+  - `adviser/` Adviser dashboard route *(AUM overview, client roster, alerts)*.
+  - `profile/` Profile, adviser connections, and next-of-kin nomination.
+  - `globals.css` Tailwind base + dark theme tokens.
+- `components/`
+  **Feature UI components.**
+  - `WealthWallet.tsx` Unified multi-asset-class view with live prices and charts.
+  - `AIRecommendations.tsx` Claude-powered slide-out adviser chat.
+  - `BlackSwanTester.tsx` Historical-crisis scenario simulator.
+  - `FlashLiquidityScorecard.tsx` Tiered T+0 / T+2 / T+30 liquidity stress test.
+  - `LegacyReadiness.tsx` Estate-planning readiness checklist.
+  - `DirectMessages.tsx` Realtime adviser ↔ client messaging.
+- `lib/`
+  **Server logic and integrations.**
+  - `claude.ts` **Server-side only** Anthropic SDK wrapper *(never imported client-side)*.
+  - `wellness.ts` Wellness Score computation *(diversification / liquidity / behavioural)*.
+  - `supabase.ts` & `supabase-server.ts` Supabase clients *(browser + service-role)*.
+  - `archetypes.ts` Investor archetype mapping from the risk questionnaire.
+  - `db.ts`, `mock-data.ts`, `utils.ts` Data access, seed data, helpers.
+- `types/` Shared TypeScript types.
+- `supabase-schema.sql` Full database schema *(tables + Row Level Security)*.
+- `Dockerfile` & `docker-compose.yml` Multi-stage container build *(deps → builder → runner on node:20-alpine)*.
+- `features.md`, `PRD.md`, `QA_REPORT.md`, `docs/` Project planning + QA docs.
 
-### Client Dashboard
+## System Overview
 
-**Wealth Wallet**
-- Unified view of all asset classes: Stocks, Crypto, Real Estate, Bonds, Cash, Private Equity
-- Live price feeds for equities (Finage API) and crypto (CoinGecko), auto-refreshed every 60 seconds
-- Donut chart (allocation by asset class) and bar chart (class breakdown by value)
-- Add / edit / remove individual positions — stocks and crypto auto-fetch current price on ticker entry
-- Privacy mode: clients can hide portfolio amounts from their adviser with a single toggle
+### System Architecture
 
-**Wellness Score Card**
-- Composite score (0–100) computed in real time from three weighted dimensions
-- Colour-coded label: Excellent (85+) / Good (70+) / Fair (50+) / Poor (30+) / Critical (<30)
-- Score breakdown panel explaining the methodology behind each sub-score
-- Animated progress bars on load; radar chart showing all three dimensions simultaneously
+***Huat*** is a **Next.js App-Router app on Vercel**, backed by **Supabase** (PostgreSQL + Auth + Realtime) for all persistence and live messaging.
 
-**AI Adviser Chat (Claude)**
-- Slide-out panel accessible from any page via the sparkle icon in the navbar (or ⌘L)
-- Multi-turn conversation: full history sent with every request for genuine context continuity
-- Dual response mode: structured recommendation cards for portfolio questions; plain text for general queries
-- Session tabs: past conversations stored in Supabase and loadable as read-only history
-- Zero overhead on page load — panel fires only when opened
+- **AI calls are server-only.** The browser never talks to Anthropic directly — all inference is routed through a Next.js API route (`/api/recommendations`), which builds the prompt from the client's full portfolio context and keeps the API key off the client.
+- **Non-blocking AI panel.** The chat panel fires zero requests until the user opens it, so page load stays fast.
+- **Parallel auth fetches.** On login, profile, portfolio+assets, and adviser-client queries fire in parallel rather than in sequence.
+- **Live pricing with graceful fallback.** Equity prices (Finage) and crypto prices (CoinGecko) are fetched with a 60-second server-side cache; if a provider is down, hardcoded fallback prices keep the page working.
+- **Row Level Security on every table** — users can only modify their own data; advisers can read connected client data only.
 
-**Advanced Analytics**
-- **Black Swan Scenario Tester** — see the impact of four historical or hypothetical crises on your portfolio and wellness score
-- **Flash Liquidity & Stress Test** — tiered liquidation analysis across T+0, T+2, and T+30 time horizons
-- **Legacy & Inheritance Readiness** — five-point estate planning checklist with a completion "Legacy Score"
+### Wellness Score — how it works in plain terms
 
-**Onboarding & Risk Profiling**
-- Multi-step signup with a five-question risk questionnaire (scored 5–15)
-- Investor archetype reveal: Vault Guardian (Conservative), Balanced Pathfinder (Moderate), or Quantum Maverick (Aggressive)
-- Archetype shown as a persistent badge on the dashboard header
-- Real-time username availability check during registration
-
-### Adviser Dashboard
-
-- **AUM overview** — total assets under management across all connected clients
-- **Average wellness score** and count of low-wellness alerts (clients scoring below 50)
-- **Client roster table** — name, email, risk profile badge, AUM, and animated wellness score arc per client
-- Click-through to any client's full dashboard (with privacy masking respected)
-- Direct messaging with individual clients via Supabase Realtime
-
-### Profile & Connections
-
-- Search for advisers by username and send connection requests
-- Nominate next-of-kin (NOK): search users, nominate, accept or reject nominations
-- Real-time direct messaging thread between adviser and client
-
----
-
-## Analysis Methods
-
-### Wellness Score
-
-The Wellness Score is a composite metric (0–100) combining three dimensions of financial health, each grounded in established portfolio theory:
+The **Wellness Score (0–100)** blends three measures of financial health:
 
 ```
 Wellness Score = (Diversification × 0.40) + (Liquidity × 0.35) + (Behavioural Alignment × 0.25)
 ```
 
----
+- **Diversification (40%)** — how spread out the money is, measured with the **Herfindahl-Hirschman Index** *(the same concentration metric regulators use)*. One asset class = 0; evenly spread across all six ≈ 100.
+- **Liquidity (35%)** — how fast the portfolio could be turned into cash in a crisis, scored in tiers *(because going from 20%→30% liquid matters far more than 70%→80%)*.
+- **Behavioural Alignment (25%)** — whether what you *hold* matches the risk level you *said* you wanted *(e.g. a self-described conservative holding 40% crypto gets flagged)*. It surfaces misalignment as a signal — it never forces a rebalance.
 
-#### 1. Diversification Score (40% weight)
+### Tech Stack
 
-Measures how well a portfolio avoids concentration risk using the **Herfindahl-Hirschman Index (HHI)** — the same metric used by regulators to assess market concentration.
+![Frontend](https://img.shields.io/badge/frontend%3A-222222?style=for-the-badge) &nbsp; ![Next.js Badge](https://img.shields.io/badge/next.js%2016-000000?style=for-the-badge&logo=nextdotjs&labelColor=222222) ![TypeScript Badge](https://img.shields.io/badge/typescript-3178C6?style=for-the-badge&logo=typescript&labelColor=222222) ![Tailwind Badge](https://img.shields.io/badge/tailwindcss%204-06B6D4?style=for-the-badge&logo=tailwindcss&labelColor=222222) ![Framer Motion Badge](https://img.shields.io/badge/framer%20motion-0055FF?style=for-the-badge&logo=framer&labelColor=222222) ![Recharts Badge](https://img.shields.io/badge/recharts-22B5BF?style=for-the-badge&logo=chartdotjs&labelColor=222222)
 
-**Calculation:**
-1. Group all assets by class (Stocks, Crypto, Real Estate, Bonds, Cash, Private Equity)
-2. Compute the weight of each class as a fraction of total portfolio value
-3. Sum the squared weights: `HHI = Σ(weight_i²)`
-4. Normalize to a 0–100 score:
+![Backend](https://img.shields.io/badge/backend%2F%20data%3A-222222?style=for-the-badge) &nbsp; ![Supabase Badge](https://img.shields.io/badge/supabase-3FCF8E?style=for-the-badge&logo=supabase&labelColor=222222) ![PostgreSQL Badge](https://img.shields.io/badge/postgresql-4169E1?style=for-the-badge&logo=postgresql&labelColor=222222)
 
-```
-diversificationScore = (1 - HHI) / (1 - 1/n) × 100
-```
+![AI](https://img.shields.io/badge/ai%3A-222222?style=for-the-badge) &nbsp; ![Claude Badge](https://img.shields.io/badge/claude-D97757?style=for-the-badge&logo=anthropic&labelColor=222222)
 
-where `n` is the number of asset classes present. A portfolio with a single asset class scores **0**; a portfolio perfectly spread across all six classes scores close to **100**.
+![Pricing](https://img.shields.io/badge/market%20data%3A-222222?style=for-the-badge) &nbsp; ![CoinGecko Badge](https://img.shields.io/badge/coingecko-8DC63F?style=for-the-badge&logo=coingecko&labelColor=222222) ![Finage Badge](https://img.shields.io/badge/finage-1A73E8?style=for-the-badge&labelColor=222222)
 
-**Why HHI?** Unlike simple asset-count metrics, HHI penalises large imbalances — a 95%/5% split is treated very differently from a 50%/50% split, matching how institutional risk managers think about concentration.
+![Deploy](https://img.shields.io/badge/deploy%3A-222222?style=for-the-badge) &nbsp; ![Vercel Badge](https://img.shields.io/badge/vercel-000000?style=for-the-badge&logo=vercel&labelColor=222222) ![Docker Badge](https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&labelColor=222222)
 
----
+### AI Adviser (Claude)
 
-#### 2. Liquidity Score (35% weight)
+- **Multi-turn:** full conversation history is sent with every request, loaded from Supabase `chat_messages` when the panel opens.
+- **Dual response mode:** portfolio questions return structured recommendation cards *(title, description, priority, category)*; general questions return plain text.
+- **Resilient:** JSON parsing is wrapped in `try/catch`, with hardcoded fallback recommendations so the UI never breaks if the API is unavailable.
 
-Measures how quickly a portfolio can be converted to cash in a crisis.
-
-**Liquid asset classes:** Cash, Stocks, Bonds, Crypto *(highly marketable)*
-**Illiquid asset classes:** Real Estate, Private Equity *(days to months to liquidate)*
-
-**Calculation:**
-```
-liquidityRatio = liquidAssets / totalPortfolioValue
-```
-
-Tiered scoring (reflecting real-world market dynamics):
-
-| Liquidity Ratio | Score |
-|---|---|
-| ≥ 90% | 95 |
-| ≥ 70% | 80 |
-| ≥ 50% | 65 |
-| ≥ 30% | 45 |
-| ≥ 20% | 30 |
-| < 20% | 15 |
-
-**Why tiered, not linear?** Liquidity is non-linear in practice — moving from 20% to 30% liquid is far more impactful than moving from 70% to 80%. The tier thresholds reflect typical institutional minimum liquidity buffers.
-
----
-
-#### 3. Behavioural Alignment Score (25% weight)
-
-Measures whether a portfolio's actual composition matches the investor's stated risk appetite. This catches a common real-world problem: a client who *says* they are conservative but *holds* 40% in speculative crypto.
-
-**Calculation:**
-Base score starts at **70**, then adjusts up or down based on crypto ratio and private equity ratio vs. the declared risk profile:
-
-| Profile | Rewarded for | Penalised for |
-|---|---|---|
-| Conservative | < 5% crypto, < 10% PE | > 30% crypto, > 20% PE |
-| Moderate | 10–25% crypto | > 50% crypto |
-| Aggressive | 30–60% crypto, 20–50% PE | > 70% crypto |
-
-Final score is clamped to the range **10–100**.
-
-**Why not enforce limits?** The score does not force clients to rebalance — it surfaces misalignment as a signal for the adviser or the AI to address, preserving client autonomy while creating a measurable health indicator.
-
----
-
-#### Score Stability
-
-All intermediate values are rounded to 2–3 decimal places before aggregation. This prevents sub-1% price movements from causing spurious score changes — the same portfolio composition always produces the same score regardless of minor price drift.
-
----
-
-### Black Swan Scenario Tester
-
-Applies historical asset-class multipliers to the current portfolio to model extreme market events:
-
-| Scenario | Stocks | Crypto | Real Estate | Bonds | Cash | Private Equity |
-|---|---|---|---|---|---|---|
-| 2008 Financial Crisis | -55% | n/a | -30% | +15% | 0% | -60% |
-| 2020 COVID Crash | -34% | -50% | -10% | +10% | 0% | -40% |
-| Crypto Winter | -10% | -80% | -5% | +5% | 0% | -20% |
-| Hyperinflation | -20% | +50% | +30% | -40% | -30% | +10% |
-
-After applying multipliers, the Wellness Score is **recomputed in full** — not approximated — giving a before/after score comparison alongside a narrative impact explanation.
-
----
-
-### Flash Liquidity & Stress Test
-
-Models how much of a portfolio can be liquidated within different time horizons, and whether a target withdrawal amount can be met:
-
-| Tier | Horizon | Included Asset Classes |
-|---|---|---|
-| T+0 | 0–24 hours | Cash only |
-| T+2 | 2–3 business days | Cash + Stocks + Bonds + major Crypto |
-| T+30 | 30+ days | All asset classes (including Real Estate + Private Equity) |
-
-The feature accepts a target withdrawal amount and outputs a **Pass / Fail** result with shortfall breakdown and a bar chart of cumulative liquidity by tier.
-
----
-
-### Legacy & Inheritance Readiness
-
-A five-point estate planning checklist scored as a "Legacy Score" (0–100%):
-
-1. Will / Testament in place
-2. Nominees assigned to all accounts
-3. Digital vault for credentials established
-4. Life insurance coverage reviewed
-5. Power of Attorney set up
-
-Completion state is persisted per user in Supabase.
-
----
-
-## AI Integration
-
-Huat integrates **Claude claude-sonnet-4-6** as an in-app financial adviser via Anthropic's SDK.
-
-### Architecture
-- `lib/claude.ts` is **server-side only** — never imported in client components
-- All AI calls are routed through `POST /api/recommendations`
-- The chat panel fires **zero** API requests until the user opens it, keeping initial page load fast
-
-### Multi-turn Conversation
-- Full conversation history is sent with every request (not just the latest message)
-- History is loaded from Supabase `chat_messages` when the panel opens
-- Each session is identified by a UUID; new sessions are created fresh by default
-- Past sessions are shown as read-only tabs in the panel
-
-### Dual Response Mode
-The system prompt instructs Claude to detect the query type and respond accordingly:
-
-- **Portfolio questions** → structured JSON with recommendation cards (title, description, priority: High/Medium/Low, category: Diversification/Liquidity/Risk/Opportunity)
-- **General questions** (maths, trivia, casual chat) → plain text answer
-
-This means the UI renders rich interactive cards for financial advice while still handling off-topic questions gracefully.
-
-### Prompt Design
-Each request includes:
-- The client's full portfolio with asset breakdown
-- Current Wellness Score and all three sub-scores
-- Declared risk profile and investor archetype
-- Full prior conversation history
-- Instruction to return valid JSON only (no markdown)
-
-### Resilience
-- Full `try/catch` wrapping around JSON parse
-- Hardcoded `FALLBACK_RECOMMENDATIONS` returned if the API is unavailable, so the UI never shows an error state
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router) + TypeScript |
-| Styling | Tailwind CSS 4 (dark theme, gold/emerald palette) |
-| Animations | Framer Motion 12 |
-| Charts | Recharts 3 |
-| Database | Supabase (PostgreSQL + Auth + Realtime) |
-| AI | Anthropic Claude claude-sonnet-4-6 via @anthropic-ai/sdk |
-| Crypto Prices | CoinGecko free API (60s server-side cache) |
-| Stock Prices | Finage API (60s server-side cache, fallback prices) |
-| Deployment | Vercel |
-
----
-
-## Architecture Highlights
-
-**Server-only AI calls** — Claude is never called from the browser. All inference goes through a Next.js API route, keeping the API key secure and enabling server-side prompt construction with full portfolio context.
-
-**Non-blocking AI panel** — The chat panel does not block page render. It fires its first request only after the user opens it, keeping initial page load fast.
-
-**Parallel auth fetches** — On login, three Supabase queries fire in parallel (profile, portfolio + assets, adviser clients) rather than sequentially, eliminating round-trip latency.
-
-**Privacy-aware adviser queries** — The adviser roster first attempts a query including the `hide_amounts_from_adviser` column. If the column is absent (older schema), it automatically retries without it — backwards compatible without a migration flag.
-
-**Session-based logout** — Auth state is stored in `sessionStorage`, not `localStorage`, so closing the browser tab automatically logs the user out. Designed for shared or semi-public devices.
-
-**Live pricing with graceful fallback** — Both the crypto and stock API routes include hardcoded fallback prices. A CoinGecko or Finage outage degrades to slightly stale data rather than a broken page.
-
----
-
-## Database Schema
+### Database Schema
 
 | Table | Purpose |
 |---|---|
-| `profiles` | User info, role (client/adviser), risk profile, investor archetype, adviser link, privacy flag |
-| `portfolios` | Portfolio totals per client with last-updated timestamp |
-| `assets` | Individual positions (name, ticker, class, value, quantity, CoinGecko ID, Finage symbol) |
-| `chat_messages` | AI chat history (session_id, role, content, response JSONB) |
-| `direct_messages` | Adviser ↔ client messaging (sender, recipient, content, read timestamp) |
+| `profiles` | User info, role, risk profile, archetype, adviser link, privacy flag |
+| `portfolios` | Portfolio totals per client |
+| `assets` | Individual positions *(name, ticker, class, value, quantity)* |
+| `chat_messages` | AI chat history *(session, role, content, response JSONB)* |
+| `direct_messages` | Adviser ↔ client messaging |
 | `portfolio_templates` | Starter portfolios by risk profile, seeded on signup |
-
-Row Level Security (RLS) is enabled on all tables. Users can only modify their own data; advisers can read connected client data.
-
----
 
 ## Getting Started
 
-### Prerequisites
-- Node.js 18+
-- A Supabase project
-- An Anthropic API key
+### Pre-requisites
 
-### Environment Variables
+> ⚠️ **Pre-requisite!** You will need:
+> - [Node.js 18+](https://nodejs.org/) — runtime for Next.js.
+> - A [Supabase](https://supabase.com/) project — database, auth, and realtime.
+> - An [Anthropic API key](https://console.anthropic.com/) — powers the AI adviser.
+> - *(Optional)* a [Finage](https://finage.co.uk/) API key for live equity prices — falls back to hardcoded prices if absent.
 
-Create `.env.local` in the project root:
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/visrutsuresh/FinTech-Innovators-Hackathon.git
+cd FinTech-Innovators-Hackathon
+```
+
+### 2. Configure Environment Variables
+
+Create `.env.local` in the project root. Use this template, then replace each placeholder with your real value — **never commit real secrets**:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -307,41 +157,43 @@ FINAGE_API_KEY=your_finage_api_key   # optional — falls back to hardcoded pric
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Run Locally
+| Variable | Description | How to get |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Supabase dashboard → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key *(client-safe)* | Same page as above |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key *(server only — keep secret)* | Same page as above |
+| `ANTHROPIC_API_KEY` | Claude API key *(server only)* | console.anthropic.com |
+| `FINAGE_API_KEY` | Live equity prices *(optional)* | finage.co.uk |
+
+### 3. Set Up the Database
+
+Run `supabase-schema.sql` against your Supabase project *(SQL Editor → paste → run)* to create all tables and Row Level Security policies.
+
+### 4. Install and Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Seed demo data by visiting `/api/seed` once.
+Open [http://localhost:3000](http://localhost:3000), then visit `/api/seed` **once** to seed the demo data and accounts.
 
-### Run with Docker
+### 5. (Alternative) Run with Docker
 
-Make sure `.env.local` is populated, then:
+With `.env.local` populated:
 
 ```bash
 docker compose up --build
 ```
 
-The app will be available at [http://localhost:3000](http://localhost:3000). The compose file mounts `.env.local` directly, so no extra flags are needed.
+The app is then available at [http://localhost:3000](http://localhost:3000). The compose file mounts `.env.local` directly, so no extra flags are needed.
 
-To build the image manually:
+> 📝 Note: The Dockerfile uses a multi-stage build *(deps → builder → runner)* on `node:20-alpine` and runs as a non-root `nextjs` user, serving the Next.js standalone output via `node server.js`.
 
-```bash
-docker build \
-  --build-arg NEXT_PUBLIC_APP_URL=http://localhost:3000 \
-  -t huat .
+### 6. Deploy to Vercel
 
-docker run -p 3000:3000 --env-file .env.local huat
-```
+Add the same environment variables in your Vercel project settings, then push to your connected repository (or run `vercel deploy`).
 
-The Dockerfile uses a **multi-stage build** (deps → builder → runner) on `node:20-alpine`, producing a minimal production image. The final stage runs as a non-root `nextjs` user and serves the Next.js standalone output via `node server.js`.
+## License
 
-### Deploy to Vercel
-
-Add the same environment variables in your Vercel project settings, then push to your connected repository or run:
-
-```bash
-vercel deploy
-```
+This project was built for the NTU FinTech Innovators Hackathon 2026 and is provided for educational and demonstration purposes only.
